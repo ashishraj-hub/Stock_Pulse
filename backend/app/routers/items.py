@@ -4,9 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.dependencies import get_current_user
 from app.db.dependencies import get_db
 from app.models.item import Item
 from app.models.organization import Organization
+from app.models.user import User
 from app.schemas.item import ItemCreate, ItemResponse
 
 
@@ -26,7 +28,10 @@ def create_item(
     item_data: ItemCreate,
     db: Session = Depends(get_db),
 ):
-    organization = db.get(Organization, organization_id)
+    organization = db.get(
+        Organization,
+        organization_id,
+    )
 
     if organization is None:
         raise HTTPException(
@@ -73,7 +78,10 @@ def list_items(
     organization_id: UUID,
     db: Session = Depends(get_db),
 ):
-    organization = db.get(Organization, organization_id)
+    organization = db.get(
+        Organization,
+        organization_id,
+    )
 
     if organization is None:
         raise HTTPException(
@@ -83,11 +91,50 @@ def list_items(
 
     statement = (
         select(Item)
-        .where(Item.organization_id == organization_id)
+        .where(
+            Item.organization_id == organization_id
+        )
         .order_by(Item.created_at)
     )
 
     return db.scalars(statement).all()
+
+
+@router.get(
+    "/barcode/{barcode}",
+    response_model=ItemResponse,
+)
+def get_item_by_barcode(
+    organization_id: UUID,
+    barcode: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Find an item by barcode within the authenticated
+    user's organization.
+    """
+
+    if current_user.organization_id != organization_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this organization",
+        )
+
+    item = db.scalar(
+        select(Item).where(
+            Item.organization_id == organization_id,
+            Item.barcode == barcode,
+        )
+    )
+
+    if item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item with this barcode was not found",
+        )
+
+    return item
 
 
 @router.get(
@@ -99,9 +146,15 @@ def get_item(
     item_id: UUID,
     db: Session = Depends(get_db),
 ):
-    item = db.get(Item, item_id)
+    item = db.get(
+        Item,
+        item_id,
+    )
 
-    if item is None or item.organization_id != organization_id:
+    if (
+        item is None
+        or item.organization_id != organization_id
+    ):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Item not found",

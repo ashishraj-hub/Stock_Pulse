@@ -17,6 +17,7 @@ from app.schemas.stock_movement import (
     IssueStockRequest,
     ReceiveStockRequest,
     StockMovementResponse,
+    StockMovementListItemResponse,
     TransferStockRequest,
     WastageStockRequest,
     FefoIssueRequest,
@@ -27,6 +28,113 @@ router = APIRouter(
     prefix="/api/v1/organizations/{organization_id}",
     tags=["Stock Movements"],
 )
+
+
+@router.get(
+    "/stock-movements",
+    response_model=list[StockMovementListItemResponse],
+)
+def list_stock_movements(
+    organization_id: UUID,
+    movement_type: MovementType | None = None,
+    item_id: UUID | None = None,
+    location_id: UUID | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # 1. Verify the authenticated user belongs to this organization.
+    if current_user.organization_id != organization_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this organization",
+        )
+
+    # 2. Build the movement-history query.
+    stmt = (
+        select(
+            StockMovement,
+            Item,
+            Batch,
+            Location,
+            User,
+        )
+        .join(
+            Item,
+            StockMovement.item_id == Item.id,
+        )
+        .outerjoin(
+            Batch,
+            StockMovement.batch_id == Batch.id,
+        )
+        .join(
+            Location,
+            StockMovement.location_id == Location.id,
+        )
+        .join(
+            User,
+            StockMovement.performed_by == User.id,
+        )
+        .where(
+            Item.organization_id == organization_id,
+            Location.organization_id == organization_id,
+        )
+        .order_by(
+            StockMovement.created_at.desc(),
+        )
+    )
+
+    # 3. Optional movement-type filter.
+    if movement_type is not None:
+        stmt = stmt.where(
+            StockMovement.movement_type == movement_type
+        )
+
+    # 4. Optional item filter.
+    if item_id is not None:
+        stmt = stmt.where(
+            StockMovement.item_id == item_id
+        )
+
+    # 5. Optional location filter.
+    if location_id is not None:
+        stmt = stmt.where(
+            StockMovement.location_id == location_id
+        )
+
+    # 6. Execute query.
+    rows = db.execute(stmt).all()
+
+    # 7. Convert database rows into API responses.
+    results = []
+
+    for movement, item, batch, location, user in rows:
+        results.append(
+            StockMovementListItemResponse(
+                id=movement.id,
+
+                item_id=item.id,
+                sku=item.sku,
+                item_name=item.name,
+
+                batch_id=batch.id if batch else None,
+                lot_number=batch.lot_number if batch else None,
+
+                location_id=location.id,
+                location_name=location.name,
+
+                performed_by=user.id if user else None,
+                performed_by_name=user.name if user else None,
+
+                movement_type=movement.movement_type,
+                quantity=movement.quantity,
+                reason=movement.reason,
+
+                created_at=movement.created_at,
+            )
+        )
+
+    return results
+
 
 
 @router.post(
