@@ -4,10 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.audit import create_audit_log
 from app.core.security import hash_password
+from app.core.dependencies import require_roles
 from app.db.dependencies import get_db
 from app.models.organization import Organization
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.user import UserCreate, UserResponse
 
 
@@ -26,13 +28,23 @@ def create_user(
     organization_id: UUID,
     user_data: UserCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(UserRole.ADMIN)
+    ),
 ):
     organization = db.get(Organization, organization_id)
+    
 
     if organization is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Organization not found",
+        )
+
+    if current_user.organization_id != organization_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this organization",
         )
 
     existing_user = db.scalar(
@@ -54,6 +66,22 @@ def create_user(
     )
 
     db.add(user)
+    db.flush()
+
+    create_audit_log(
+    db,
+    organization_id=organization_id,
+    user_id=current_user.id,
+    action="user.create",
+    entity_type="User",
+    entity_id=user.id,
+    details={
+        "name": user.name,
+        "email": user.email,
+        "role": user.role.value,
+    },
+    )
+
     db.commit()
     db.refresh(user)
 

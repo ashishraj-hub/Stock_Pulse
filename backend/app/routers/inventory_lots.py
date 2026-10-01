@@ -4,20 +4,27 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.dependencies import get_current_user
 from app.db.dependencies import get_db
 from app.models.batch import Batch
 from app.models.inventory_lot import InventoryLot
 from app.models.item import Item
 from app.models.location import Location
-from app.models.organization import Organization
+from app.models.user import User
 from app.schemas.inventory_lot import (
     InventoryLotCreate,
     InventoryLotResponse,
+    InventoryListItemResponse,
 )
 
 
 router = APIRouter(
     prefix="/api/v1/organizations/{organization_id}/items/{item_id}/batches/{batch_id}/inventory",
+    tags=["Inventory"],
+)
+
+organization_inventory_router = APIRouter(
+    prefix="/api/v1/organizations/{organization_id}",
     tags=["Inventory"],
 )
 
@@ -168,3 +175,63 @@ def get_inventory_lot(
         )
 
     return inventory_lot
+
+@organization_inventory_router.get(
+    "/inventory",
+    response_model=list[InventoryListItemResponse],
+)
+def list_inventory(
+    organization_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.organization_id != organization_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this organization",
+        )
+
+    rows = db.execute(
+        select(
+            InventoryLot,
+            Item,
+            Batch,
+            Location,
+        )
+        .join(Batch, InventoryLot.batch_id == Batch.id)
+        .join(Item, Batch.item_id == Item.id)
+        .join(Location, InventoryLot.location_id == Location.id)
+        .where(
+            Item.organization_id == organization_id,
+            Location.organization_id == organization_id,
+        )
+        .order_by(Item.name.asc(), Batch.expiry_date.asc().nullslast())
+    ).all()
+
+    results = []
+
+    for inventory_lot, item, batch, location in rows:
+        available_quantity = (
+            inventory_lot.quantity_on_hand
+            - inventory_lot.reserved_quantity
+        )
+
+        results.append(
+            InventoryListItemResponse(
+                inventory_lot_id=inventory_lot.id,
+                item_id=item.id,
+                sku=item.sku,
+                item_name=item.name,
+                batch_id=batch.id,
+                lot_number=batch.lot_number,
+                expiry_date=batch.expiry_date,
+                location_id=location.id,
+                location_name=location.name,
+                quantity_on_hand=inventory_lot.quantity_on_hand,
+                reserved_quantity=inventory_lot.reserved_quantity,
+                available_quantity=available_quantity,
+                updated_at=inventory_lot.updated_at,
+            )
+        )
+
+    return results
