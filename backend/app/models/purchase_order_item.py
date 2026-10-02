@@ -36,6 +36,13 @@ class PurchaseOrderItem(Base):
         nullable=False,
     )
 
+    received_quantity: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        server_default="0",
+    )
+
     unit_price: Mapped[Decimal | None] = mapped_column(
         Numeric(12, 2),
         nullable=True,

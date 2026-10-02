@@ -31,6 +31,7 @@ class PurchaseOrderItemResponse(BaseModel):
     purchase_order_id: UUID
     item_id: UUID
     quantity: int
+    received_quantity: int
     unit_price: Decimal | None
 
 

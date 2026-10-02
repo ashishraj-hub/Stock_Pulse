@@ -15,6 +15,8 @@ from app.routers import (
     audit_logs,
     suppliers,
     purchase_orders,
+    purchase_order_workflow,
+    purchase_order_receiving,
 )
 
 
@@ -52,3 +54,5 @@ app.include_router(dashboard.router)
 app.include_router(audit_logs.router)
 app.include_router(suppliers.router)
 app.include_router(purchase_orders.router)
+app.include_router(purchase_order_workflow.router)
+app.include_router(purchase_order_receiving.router)
