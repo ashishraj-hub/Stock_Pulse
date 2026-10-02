@@ -13,6 +13,8 @@ from app.routers import (
     reorder,
     dashboard,
     audit_logs,
+    suppliers,
+    purchase_orders,
 )
 
 
@@ -48,3 +50,5 @@ app.include_router(auth.router)
 app.include_router(reorder.router)
 app.include_router(dashboard.router)
 app.include_router(audit_logs.router)
+app.include_router(suppliers.router)
+app.include_router(purchase_orders.router)

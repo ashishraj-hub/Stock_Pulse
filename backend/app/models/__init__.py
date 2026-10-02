@@ -6,6 +6,9 @@ from app.models.batch import Batch
 from app.models.inventory_lot import InventoryLot
 from app.models.stock_movement import StockMovement, MovementType
 from app.models.audit_log import AuditLog
+from app.models.supplier import Supplier
+from app.models.purchase_order import PurchaseOrder, PurchaseOrderStatus
+from app.models.purchase_order_item import PurchaseOrderItem
 
 __all__ = [
     "Organization",
@@ -18,4 +21,8 @@ __all__ = [
     "StockMovement",
     "MovementType",
     "AuditLog",
+    "Supplier",
+    "PurchaseOrder",
+    "PurchaseOrderStatus",
+    "PurchaseOrderItem",
 ]

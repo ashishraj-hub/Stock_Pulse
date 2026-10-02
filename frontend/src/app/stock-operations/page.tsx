@@ -32,6 +32,25 @@ type OperationType =
   | "transfer"
   | "fefo";
 
+const VALID_OPERATIONS: OperationType[] = [
+  "receive",
+  "issue",
+  "wastage",
+  "transfer",
+  "fefo",
+];
+
+function isOperationType(
+  value: string | null,
+): value is OperationType {
+  return (
+    value !== null &&
+    VALID_OPERATIONS.includes(
+      value as OperationType,
+    )
+  );
+}
+
 export default function StockOperationsPage() {
   const [user, setUser] =
     useState<CurrentUser | null>(null);
@@ -49,7 +68,8 @@ export default function StockOperationsPage() {
     setSelectedInventoryLotId,
   ] = useState("");
 
-  // Used only by FEFO:
+  // Used only by FEFO.
+  // FEFO chooses item + location, not a batch.
   const [selectedItemId, setSelectedItemId] =
     useState("");
 
@@ -77,11 +97,50 @@ export default function StockOperationsPage() {
   const [submitting, setSubmitting] =
     useState(false);
 
+  // If this page was opened from the scanner,
+  // this contains the scanned item's ID.
+  const [scannedItemId, setScannedItemId] =
+    useState("");
+
+  /*
+   * Load authenticated user and inventory.
+   *
+   * We also read optional URL parameters:
+   *
+   * /stock-operations?itemId=...&operation=issue
+   *
+   * These parameters are supplied by the barcode
+   * scanner when the user chooses an operation.
+   */
   useEffect(() => {
     async function loadData() {
       try {
         setLoading(true);
         setError("");
+
+        const params = new URLSearchParams(
+          window.location.search,
+        );
+
+        const itemIdFromUrl =
+          params.get("itemId") ?? "";
+
+        const operationFromUrl =
+          params.get("operation");
+
+        setScannedItemId(
+          itemIdFromUrl,
+        );
+
+        if (
+          isOperationType(
+            operationFromUrl,
+          )
+        ) {
+          setOperation(
+            operationFromUrl,
+          );
+        }
 
         const currentUser =
           await getCurrentUser();
@@ -93,7 +152,9 @@ export default function StockOperationsPage() {
             currentUser.organization_id,
           );
 
-        setInventory(inventoryItems);
+        setInventory(
+          inventoryItems,
+        );
       } catch (err) {
         setError(
           err instanceof Error
@@ -109,13 +170,7 @@ export default function StockOperationsPage() {
   }, []);
 
   /*
-   * Normal-operation selected inventory lot.
-   *
-   * Used for:
-   * Receive
-   * Issue
-   * Wastage
-   * Transfer
+   * Currently selected normal-operation lot.
    */
   const selectedLot =
     inventory.find(
@@ -125,33 +180,39 @@ export default function StockOperationsPage() {
     ) ?? null;
 
   /*
-   * Inventory lots available for normal operations.
+   * Available lots for normal operations.
    *
-   * Receive can use any existing inventory lot.
+   * Receive:
+   *   any existing lot
    *
-   * Issue, Wastage and Transfer should only use
-   * lots that currently have available stock.
+   * Issue/Wastage/Transfer:
+   *   only lots with available stock
    */
   const availableLots = useMemo(() => {
-    if (operation === "receive") {
+    if (
+      operation === "receive"
+    ) {
       return inventory;
     }
 
     return inventory.filter(
-      (item) => item.available_quantity > 0,
+      (item) =>
+        item.available_quantity > 0,
     );
-  }, [inventory, operation]);
+  }, [
+    inventory,
+    operation,
+  ]);
 
   /*
-   * Unique locations from inventory.
-   *
-   * Used by Transfer as the destination list.
+   * Unique locations.
    */
   const locationOptions = useMemo(() => {
-    const locations = new Map<
-      string,
-      string
-    >();
+    const locations =
+      new Map<
+        string,
+        string
+      >();
 
     for (const item of inventory) {
       locations.set(
@@ -171,19 +232,16 @@ export default function StockOperationsPage() {
   }, [inventory]);
 
   /*
-   * Unique items from inventory.
+   * Unique items.
    *
    * Used by FEFO.
-   *
-   * FEFO does NOT select a batch.
-   * The backend chooses the earliest-expiring
-   * batch automatically.
    */
   const itemOptions = useMemo(() => {
-    const items = new Map<
-      string,
-      string
-    >();
+    const items =
+      new Map<
+        string,
+        string
+      >();
 
     for (const item of inventory) {
       items.set(
@@ -203,51 +261,132 @@ export default function StockOperationsPage() {
   }, [inventory]);
 
   /*
-   * Locations that contain available stock
-   * for the currently selected FEFO item.
+   * Locations containing available stock
+   * for the selected FEFO item.
    */
-  const fefoLocationOptions = useMemo(() => {
-    if (!selectedItemId) {
-      return [];
-    }
-
-    const locations = new Map<
-      string,
-      string
-    >();
-
-    for (const item of inventory) {
-      if (
-        item.item_id === selectedItemId &&
-        item.available_quantity > 0
-      ) {
-        locations.set(
-          item.location_id,
-          item.location_name,
-        );
+  const fefoLocationOptions =
+    useMemo(() => {
+      if (!selectedItemId) {
+        return [];
       }
+
+      const locations =
+        new Map<
+          string,
+          string
+        >();
+
+      for (const item of inventory) {
+        if (
+          item.item_id ===
+            selectedItemId &&
+          item.available_quantity >
+            0
+        ) {
+          locations.set(
+            item.location_id,
+            item.location_name,
+          );
+        }
+      }
+
+      return Array.from(
+        locations.entries(),
+      ).map(
+        ([id, name]) => ({
+          id,
+          name,
+        }),
+      );
+    }, [
+      inventory,
+      selectedItemId,
+    ]);
+
+  /*
+   * Scanner integration.
+   *
+   * If the scanner opened this page with:
+   *
+   * ?itemId=XYZ&operation=issue
+   *
+   * automatically select the matching item/lot.
+   */
+  useEffect(() => {
+    if (
+      !scannedItemId ||
+      inventory.length === 0
+    ) {
+      return;
     }
 
-    return Array.from(
-      locations.entries(),
-    ).map(
-      ([id, name]) => ({
-        id,
-        name,
-      }),
+    /*
+     * FEFO:
+     *
+     * Select the scanned item and automatically
+     * select the first location that has stock.
+     */
+    if (
+      operation === "fefo"
+    ) {
+      const fefoLocation =
+        inventory.find(
+          (item) =>
+            item.item_id ===
+              scannedItemId &&
+            item.available_quantity >
+              0,
+        );
+
+      setSelectedItemId(
+        scannedItemId,
+      );
+
+      setSelectedInventoryLotId("");
+
+      setSelectedLocationId(
+        fefoLocation?.location_id ??
+          "",
+      );
+
+      return;
+    }
+
+    /*
+     * Normal operations:
+     *
+     * Find the first matching inventory lot
+     * for the scanned item.
+     */
+    const matchingLot =
+      availableLots.find(
+        (item) =>
+          item.item_id ===
+          scannedItemId,
+      );
+
+    setSelectedInventoryLotId(
+      matchingLot?.inventory_lot_id ??
+        "",
     );
+
+    setSelectedItemId("");
+    setSelectedLocationId("");
   }, [
+    availableLots,
     inventory,
-    selectedItemId,
+    operation,
+    scannedItemId,
   ]);
 
   /*
-   * If a normal-operation inventory lot
-   * disappears after refreshing/filtering,
-   * clear the selection.
+   * Keep the selected normal-operation lot
+   * valid when filters change.
    */
   useEffect(() => {
-    if (operation === "fefo") {
+    if (
+      operation === "fefo"
+    ) {
       return;
     }
 
@@ -258,39 +397,62 @@ export default function StockOperationsPage() {
           selectedInventoryLotId,
       );
 
-    if (!stillExists) {
-      setSelectedInventoryLotId("");
+    if (
+      !stillExists &&
+      !scannedItemId
+    ) {
+      setSelectedInventoryLotId(
+        "",
+      );
     }
   }, [
     availableLots,
-    selectedInventoryLotId,
     operation,
+    scannedItemId,
+    selectedInventoryLotId,
   ]);
 
   /*
-   * When changing away from FEFO, clear its
-   * item/location selections.
+   * FEFO is independent of normal lot selection.
    */
   useEffect(() => {
-    if (operation !== "fefo") {
+    if (
+      operation !== "fefo"
+    ) {
       setSelectedItemId("");
       setSelectedLocationId("");
     }
   }, [operation]);
 
   /*
-   * When changing to FEFO, clear the normal
-   * inventory-lot selection.
-   *
-   * This prevents an old lot selection from
-   * accidentally being reused.
+   * When the user manually chooses a FEFO item,
+   * automatically select its first available location.
    */
-  useEffect(() => {
-    if (operation === "fefo") {
-      setSelectedInventoryLotId("");
-    }
-  }, [operation]);
+  function handleFefoItemChange(
+    itemId: string,
+  ) {
+    setSelectedItemId(
+      itemId,
+    );
 
+    const firstAvailableLocation =
+      inventory.find(
+        (item) =>
+          item.item_id ===
+            itemId &&
+          item.available_quantity >
+            0,
+      );
+
+    setSelectedLocationId(
+      firstAvailableLocation?.location_id ??
+        "",
+    );
+  }
+
+  /*
+   * Submit stock operation.
+   */
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
   ) {
@@ -307,7 +469,7 @@ export default function StockOperationsPage() {
       Number(quantity);
 
     /*
-     * Quantity validation
+     * Quantity validation.
      */
     if (
       !Number.isInteger(
@@ -322,43 +484,29 @@ export default function StockOperationsPage() {
     }
 
     /*
-     * Normal operations require an inventory lot.
+     * FEFO uses item + location.
      *
-     * FEFO is intentionally excluded because
-     * FEFO selects item + location instead.
+     * Other operations use an inventory lot.
      */
     if (
-      !selectedLot &&
-      operation !== "fefo"
+      operation === "fefo"
     ) {
+      if (!selectedItemId) {
+        setError(
+          "Please select an item.",
+        );
+        return;
+      }
+
+      if (!selectedLocationId) {
+        setError(
+          "Please select a location.",
+        );
+        return;
+      }
+    } else if (!selectedLot) {
       setError(
         "Please select an inventory lot.",
-      );
-      return;
-    }
-
-    /*
-     * FEFO requires an item.
-     */
-    if (
-      operation === "fefo" &&
-      !selectedItemId
-    ) {
-      setError(
-        "Please select an item.",
-      );
-      return;
-    }
-
-    /*
-     * FEFO requires a location.
-     */
-    if (
-      operation === "fefo" &&
-      !selectedLocationId
-    ) {
-      setError(
-        "Please select a location.",
       );
       return;
     }
@@ -390,8 +538,7 @@ export default function StockOperationsPage() {
     }
 
     /*
-     * Transfer cannot use the same location
-     * as source and destination.
+     * Source and destination cannot be identical.
      */
     if (
       operation === "transfer" &&
@@ -414,7 +561,9 @@ export default function StockOperationsPage() {
       /*
        * RECEIVE
        */
-      if (operation === "receive") {
+      if (
+        operation === "receive"
+      ) {
         await receiveStock(
           organizationId,
           selectedLot!.item_id,
@@ -433,7 +582,9 @@ export default function StockOperationsPage() {
       /*
        * ISSUE
        */
-      if (operation === "issue") {
+      if (
+        operation === "issue"
+      ) {
         await issueStock(
           organizationId,
           selectedLot!.item_id,
@@ -452,7 +603,9 @@ export default function StockOperationsPage() {
       /*
        * WASTAGE
        */
-      if (operation === "wastage") {
+      if (
+        operation === "wastage"
+      ) {
         await recordWastage(
           organizationId,
           selectedLot!.item_id,
@@ -470,7 +623,9 @@ export default function StockOperationsPage() {
       /*
        * TRANSFER
        */
-      if (operation === "transfer") {
+      if (
+        operation === "transfer"
+      ) {
         await transferStock(
           organizationId,
           selectedLot!.item_id,
@@ -492,14 +647,15 @@ export default function StockOperationsPage() {
        * FEFO
        *
        * IMPORTANT:
-       * We send only item + location + quantity.
+       * No batch is sent.
        *
-       * We do NOT send a batch.
-       *
-       * The backend decides which batch/batches
-       * should be consumed according to FEFO.
+       * The backend decides which
+       * earliest-expiring batch/batches
+       * should be consumed.
        */
-      if (operation === "fefo") {
+      if (
+        operation === "fefo"
+      ) {
         await fefoIssueStock(
           organizationId,
           selectedItemId,
@@ -515,9 +671,11 @@ export default function StockOperationsPage() {
       }
 
       /*
-       * Success message
+       * Success message.
        */
-      if (operation === "fefo") {
+      if (
+        operation === "fefo"
+      ) {
         setMessage(
           "FEFO issue completed successfully. Stock was issued from the earliest-expiring batches.",
         );
@@ -528,36 +686,22 @@ export default function StockOperationsPage() {
       }
 
       /*
-       * Clear common fields.
+       * Clear form fields.
        */
       setQuantity("");
       setReason("");
-
-      /*
-       * Clear normal-operation selections.
-       */
       setSelectedInventoryLotId("");
+      setDestinationLocationId("");
 
-      /*
-       * Clear FEFO selections.
-       */
-      if (operation === "fefo") {
+      if (
+        operation === "fefo"
+      ) {
         setSelectedItemId("");
         setSelectedLocationId("");
       }
 
       /*
-       * Clear transfer destination.
-       */
-      if (operation === "transfer") {
-        setDestinationLocationId("");
-      }
-
-      /*
-       * Refresh inventory after the operation.
-       *
-       * This is especially important for FEFO because
-       * multiple batches can change during one operation.
+       * Refresh inventory.
        */
       const refreshedInventory =
         await getInventory(
@@ -579,7 +723,7 @@ export default function StockOperationsPage() {
   }
 
   /*
-   * Loading state
+   * Loading state.
    */
   if (loading) {
     return (
@@ -592,9 +736,12 @@ export default function StockOperationsPage() {
   }
 
   /*
-   * Authentication/load error
+   * Authentication/load error.
    */
-  if (error && !user) {
+  if (
+    error &&
+    !user
+  ) {
     return (
       <main className="min-h-screen p-8">
         <h1 className="text-2xl font-bold">
@@ -615,8 +762,8 @@ export default function StockOperationsPage() {
   /*
    * RBAC:
    *
-   * Admin and Staff can perform stock operations.
-   * Viewer can only view inventory/dashboard.
+   * Admin + Staff can perform operations.
+   * Viewer cannot.
    */
   const canOperate =
     user.role === "admin" ||
@@ -640,6 +787,19 @@ export default function StockOperationsPage() {
     );
   }
 
+  /*
+   * Find the scanned item for the
+   * confirmation banner.
+   */
+  const scannedItem =
+    scannedItemId
+      ? inventory.find(
+          (item) =>
+            item.item_id ===
+            scannedItemId,
+        ) ?? null
+      : null;
+
   return (
     <main className="min-h-screen p-8">
       <div className="mx-auto max-w-4xl">
@@ -657,6 +817,40 @@ export default function StockOperationsPage() {
           </p>
         </div>
 
+        {scannedItem && (
+          <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
+            <p className="text-sm font-medium text-blue-900">
+              Scanned item loaded
+            </p>
+
+            <p className="mt-1 text-blue-800">
+              {scannedItem.item_name}{" "}
+              — {scannedItem.sku}
+            </p>
+
+            <p className="mt-1 text-sm text-blue-700">
+              The item from the barcode
+              scan has been preselected
+              below.
+            </p>
+          </div>
+        )}
+
+        {scannedItemId &&
+          !scannedItem && (
+            <div className="mb-6 rounded-xl border border-yellow-200 bg-yellow-50 p-4">
+              <p className="font-medium text-yellow-900">
+                Scanned item was not found
+                in current inventory.
+              </p>
+
+              <p className="mt-1 text-sm text-yellow-800">
+                You can still select an
+                inventory lot manually.
+              </p>
+            </div>
+          )}
+
         <form
           onSubmit={handleSubmit}
           className="rounded-xl border bg-white p-6 shadow-sm"
@@ -670,12 +864,15 @@ export default function StockOperationsPage() {
 
               <select
                 value={operation}
-                onChange={(event) =>
+                onChange={(event) => {
                   setOperation(
                     event.target
                       .value as OperationType,
-                  )
-                }
+                  );
+
+                  setMessage("");
+                  setError("");
+                }}
                 className="mt-2 w-full rounded-lg border px-3 py-2"
               >
                 <option value="receive">
@@ -701,33 +898,30 @@ export default function StockOperationsPage() {
             </div>
 
             {/* 
-              FEFO uses:
+              FEFO:
               Item + Location
 
-              Normal operations use:
+              Normal operations:
               Inventory Lot
             */}
-            {operation === "fefo" ? (
+            {operation ===
+            "fefo" ? (
               <>
-                {/* FEFO Item */}
                 <div>
                   <label className="block text-sm font-medium">
                     Item
                   </label>
 
                   <select
-                    value={selectedItemId}
-                    onChange={(event) => {
-                      setSelectedItemId(
-                        event.target.value,
-                      );
-
-                      /*
-                       * Changing the item invalidates
-                       * the previously selected location.
-                       */
-                      setSelectedLocationId("");
-                    }}
+                    value={
+                      selectedItemId
+                    }
+                    onChange={(event) =>
+                      handleFefoItemChange(
+                        event.target
+                          .value,
+                      )
+                    }
                     className="mt-2 w-full rounded-lg border px-3 py-2"
                   >
                     <option value="">
@@ -747,17 +941,19 @@ export default function StockOperationsPage() {
                   </select>
                 </div>
 
-                {/* FEFO Location */}
                 <div>
                   <label className="block text-sm font-medium">
                     Location
                   </label>
 
                   <select
-                    value={selectedLocationId}
+                    value={
+                      selectedLocationId
+                    }
                     onChange={(event) =>
                       setSelectedLocationId(
-                        event.target.value,
+                        event.target
+                          .value,
                       )
                     }
                     disabled={
@@ -772,8 +968,12 @@ export default function StockOperationsPage() {
                     {fefoLocationOptions.map(
                       (location) => (
                         <option
-                          key={location.id}
-                          value={location.id}
+                          key={
+                            location.id
+                          }
+                          value={
+                            location.id
+                          }
                         >
                           {location.name}
                         </option>
@@ -782,22 +982,22 @@ export default function StockOperationsPage() {
                   </select>
                 </div>
 
-                {/* FEFO explanation */}
                 <div className="rounded-lg bg-blue-50 p-4 text-sm text-blue-800">
                   <p className="font-medium">
-                    FEFO will automatically use
-                    the earliest-expiring stock.
+                    FEFO will automatically
+                    use the earliest-expiring
+                    stock.
                   </p>
 
                   <p className="mt-1">
                     You do not need to select a
-                    batch. The system will choose
-                    the appropriate batch or batches.
+                    batch. The system chooses
+                    the appropriate batch or
+                    batches.
                   </p>
                 </div>
               </>
             ) : (
-              /* Normal operations */
               <div>
                 <label className="block text-sm font-medium">
                   Inventory Lot
@@ -809,13 +1009,15 @@ export default function StockOperationsPage() {
                   }
                   onChange={(event) =>
                     setSelectedInventoryLotId(
-                      event.target.value,
+                      event.target
+                        .value,
                     )
                   }
                   className="mt-2 w-full rounded-lg border px-3 py-2"
                 >
                   <option value="">
-                    Select item / batch / location
+                    Select item / batch /
+                    location
                   </option>
 
                   {availableLots.map(
@@ -828,8 +1030,10 @@ export default function StockOperationsPage() {
                           item.inventory_lot_id
                         }
                       >
-                        {item.item_name} —{" "}
-                        {item.lot_number} —{" "}
+                        {item.item_name}{" "}
+                        —{" "}
+                        {item.lot_number}{" "}
+                        —{" "}
                         {item.location_name}{" "}
                         — Available:{" "}
                         {
@@ -844,13 +1048,16 @@ export default function StockOperationsPage() {
 
             {/* Selected lot information */}
             {selectedLot &&
-              operation !== "fefo" && (
+              operation !==
+                "fefo" && (
                 <div className="rounded-lg bg-gray-50 p-4 text-sm">
                   <p>
                     <strong>
                       Item:
                     </strong>{" "}
-                    {selectedLot.item_name}
+                    {
+                      selectedLot.item_name
+                    }
                   </p>
 
                   <p>
@@ -864,7 +1071,9 @@ export default function StockOperationsPage() {
                     <strong>
                       Lot:
                     </strong>{" "}
-                    {selectedLot.lot_number}
+                    {
+                      selectedLot.lot_number
+                    }
                   </p>
 
                   <p>
@@ -901,7 +1110,8 @@ export default function StockOperationsPage() {
                   }
                   onChange={(event) =>
                     setDestinationLocationId(
-                      event.target.value,
+                      event.target
+                        .value,
                     )
                   }
                   className="mt-2 w-full rounded-lg border px-3 py-2"
@@ -913,8 +1123,12 @@ export default function StockOperationsPage() {
                   {locationOptions.map(
                     (location) => (
                       <option
-                        key={location.id}
-                        value={location.id}
+                        key={
+                          location.id
+                        }
+                        value={
+                          location.id
+                        }
                       >
                         {location.name}
                       </option>
@@ -937,7 +1151,8 @@ export default function StockOperationsPage() {
                 value={quantity}
                 onChange={(event) =>
                   setQuantity(
-                    event.target.value,
+                    event.target
+                      .value,
                   )
                 }
                 className="mt-2 w-full rounded-lg border px-3 py-2"
@@ -963,7 +1178,8 @@ export default function StockOperationsPage() {
                 value={reason}
                 onChange={(event) =>
                   setReason(
-                    event.target.value,
+                    event.target
+                      .value,
                   )
                 }
                 rows={3}
@@ -972,21 +1188,18 @@ export default function StockOperationsPage() {
               />
             </div>
 
-            {/* Error */}
             {error && (
               <p className="text-red-600">
                 {error}
               </p>
             )}
 
-            {/* Success */}
             {message && (
               <p className="text-green-600">
                 {message}
               </p>
             )}
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={submitting}
