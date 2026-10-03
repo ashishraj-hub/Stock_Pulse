@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { getCurrentUser, type CurrentUser } from "../lib/auth";
@@ -13,7 +14,8 @@ import {
   type PurchaseOrderStatus,
 } from "../lib/purchase-orders";
 
-const ORGANIZATION_ID = "addc299a-6ab4-4399-83ab-490ce15f3faa";
+const ORGANIZATION_ID =
+  "addc299a-6ab4-4399-83ab-490ce15f3faa";
 
 function formatStatus(status: PurchaseOrderStatus): string {
   switch (status) {
@@ -63,10 +65,12 @@ function statusClasses(status: PurchaseOrderStatus): string {
 
 export default function PurchaseOrdersPage() {
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [currentUser, setCurrentUser] =
+    useState<CurrentUser | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [actionLoadingId, setActionLoadingId] =
+    useState<string | null>(null);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -139,17 +143,17 @@ export default function PurchaseOrdersPage() {
           break;
       }
 
-        setPurchaseOrders((current) =>
-            current.map((order) =>
-                order.id === updatedOrder.id
-                ? {
-                    ...order,
-                    ...updatedOrder,
-                    items: order.items,
-                    }
-                : order,
-            ),
-        );
+      setPurchaseOrders((current) =>
+        current.map((order) =>
+          order.id === updatedOrder.id
+            ? {
+                ...order,
+                ...updatedOrder,
+                items: order.items,
+              }
+            : order,
+        ),
+      );
 
       setSuccess(
         `Purchase order ${updatedOrder.id} is now ${formatStatus(
@@ -170,7 +174,8 @@ export default function PurchaseOrdersPage() {
   function canSubmit(order: PurchaseOrder): boolean {
     return (
       order.status === "draft" &&
-      (currentUser?.role === "admin" || currentUser?.role === "staff")
+      (currentUser?.role === "admin" ||
+        currentUser?.role === "staff")
     );
   }
 
@@ -188,26 +193,42 @@ export default function PurchaseOrdersPage() {
     );
   }
 
+  function canReceive(order: PurchaseOrder): boolean {
+    return (
+      order.status === "ordered" &&
+      (currentUser?.role === "admin" ||
+        currentUser?.role === "staff")
+    );
+  }
+
   function canCancel(order: PurchaseOrder): boolean {
     return (
-      ["draft", "pending_approval", "approved", "ordered"].includes(
-        order.status,
-      ) && currentUser?.role === "admin"
+      [
+        "draft",
+        "pending_approval",
+        "approved",
+        "ordered",
+      ].includes(order.status) &&
+      currentUser?.role === "admin"
     );
   }
 
   const summary = useMemo(() => {
     return {
       total: purchaseOrders.length,
+
       drafts: purchaseOrders.filter(
         (order) => order.status === "draft",
       ).length,
+
       pendingApproval: purchaseOrders.filter(
         (order) => order.status === "pending_approval",
       ).length,
+
       ordered: purchaseOrders.filter(
         (order) => order.status === "ordered",
       ).length,
+
       received: purchaseOrders.filter(
         (order) => order.status === "received",
       ).length,
@@ -224,7 +245,8 @@ export default function PurchaseOrdersPage() {
             </h1>
 
             <p className="mt-1 text-sm text-slate-600">
-              Create, review, approve, order, and track purchase orders.
+              Create, review, approve, order, and track purchase
+              orders.
             </p>
 
             {currentUser && (
@@ -258,14 +280,30 @@ export default function PurchaseOrdersPage() {
         )}
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <SummaryCard label="Total" value={summary.total} />
-          <SummaryCard label="Draft" value={summary.drafts} />
+          <SummaryCard
+            label="Total"
+            value={summary.total}
+          />
+
+          <SummaryCard
+            label="Draft"
+            value={summary.drafts}
+          />
+
           <SummaryCard
             label="Pending Approval"
             value={summary.pendingApproval}
           />
-          <SummaryCard label="Ordered" value={summary.ordered} />
-          <SummaryCard label="Received" value={summary.received} />
+
+          <SummaryCard
+            label="Ordered"
+            value={summary.ordered}
+          />
+
+          <SummaryCard
+            label="Received"
+            value={summary.received}
+          />
         </section>
 
         <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -288,32 +326,69 @@ export default function PurchaseOrdersPage() {
               <table className="min-w-full text-left text-sm">
                 <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th className="px-5 py-3">Purchase Order</th>
-                    <th className="px-5 py-3">Supplier</th>
-                    <th className="px-5 py-3">Status</th>
-                    <th className="px-5 py-3">Items</th>
-                    <th className="px-5 py-3">Ordered</th>
-                    <th className="px-5 py-3">Received</th>
-                    <th className="px-5 py-3">Order Date</th>
-                    <th className="px-5 py-3">Expected</th>
-                    <th className="px-5 py-3">Actions</th>
+                    <th className="px-5 py-3">
+                      Purchase Order
+                    </th>
+
+                    <th className="px-5 py-3">
+                      Supplier
+                    </th>
+
+                    <th className="px-5 py-3">
+                      Status
+                    </th>
+
+                    <th className="px-5 py-3">
+                      Items
+                    </th>
+
+                    <th className="px-5 py-3">
+                      Ordered
+                    </th>
+
+                    <th className="px-5 py-3">
+                      Received
+                    </th>
+
+                    <th className="px-5 py-3">
+                      Order Date
+                    </th>
+
+                    <th className="px-5 py-3">
+                      Expected
+                    </th>
+
+                    <th className="px-5 py-3">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
 
                 <tbody className="divide-y divide-slate-100">
                   {purchaseOrders.map((order) => {
-                    const totalOrdered = order.items.reduce(
-                      (sum, item) => sum + item.quantity,
-                      0,
-                    );
+                    const totalOrdered =
+                      order.items.reduce(
+                        (sum, item) =>
+                          sum + item.quantity,
+                        0,
+                      );
 
-                    const totalReceived = order.items.reduce(
-                      (sum, item) => sum + item.received_quantity,
-                      0,
-                    );
+                    const totalReceived =
+                      order.items.reduce(
+                        (sum, item) =>
+                          sum + item.received_quantity,
+                        0,
+                      );
 
                     const busy =
                       actionLoadingId === order.id;
+
+                    const hasAnyAction =
+                      canSubmit(order) ||
+                      canApprove(order) ||
+                      canOrder(order) ||
+                      canReceive(order) ||
+                      canCancel(order);
 
                     return (
                       <tr
@@ -326,7 +401,8 @@ export default function PurchaseOrdersPage() {
                           </div>
 
                           <div className="mt-1 text-xs text-slate-500">
-                            Created {formatDate(order.created_at)}
+                            Created{" "}
+                            {formatDate(order.created_at)}
                           </div>
                         </td>
 
@@ -368,12 +444,22 @@ export default function PurchaseOrdersPage() {
 
                         <td className="px-5 py-4">
                           <div className="flex flex-wrap gap-2">
+                            <Link
+                                href={`/purchase-orders/${order.id}`}
+                                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                              >
+                              View
+                            </Link>
+
                             {canSubmit(order) && (
                               <ActionButton
                                 label="Submit"
                                 disabled={busy}
                                 onClick={() =>
-                                  runAction(order.id, "submit")
+                                  runAction(
+                                    order.id,
+                                    "submit",
+                                  )
                                 }
                               />
                             )}
@@ -383,7 +469,10 @@ export default function PurchaseOrdersPage() {
                                 label="Approve"
                                 disabled={busy}
                                 onClick={() =>
-                                  runAction(order.id, "approve")
+                                  runAction(
+                                    order.id,
+                                    "approve",
+                                  )
                                 }
                               />
                             )}
@@ -393,9 +482,21 @@ export default function PurchaseOrdersPage() {
                                 label="Mark Ordered"
                                 disabled={busy}
                                 onClick={() =>
-                                  runAction(order.id, "order")
+                                  runAction(
+                                    order.id,
+                                    "order",
+                                  )
                                 }
                               />
+                            )}
+
+                            {canReceive(order) && (
+                              <Link
+                                href={`/purchase-orders/receiving?purchaseOrderId=${order.id}`}
+                                className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+                              >
+                                Receive Stock
+                              </Link>
                             )}
 
                             {canCancel(order) && (
@@ -404,19 +505,19 @@ export default function PurchaseOrdersPage() {
                                 disabled={busy}
                                 variant="danger"
                                 onClick={() =>
-                                  runAction(order.id, "cancel")
+                                  runAction(
+                                    order.id,
+                                    "cancel",
+                                  )
                                 }
                               />
                             )}
 
-                            {!canSubmit(order) &&
-                              !canApprove(order) &&
-                              !canOrder(order) &&
-                              !canCancel(order) && (
-                                <span className="text-xs text-slate-400">
-                                  No actions
-                                </span>
-                              )}
+                            {!hasAnyAction && (
+                              <span className="text-xs text-slate-400">
+                                No actions
+                              </span>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -441,7 +542,10 @@ function SummaryCard({
 }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-sm text-slate-500">{label}</p>
+      <p className="text-sm text-slate-500">
+        {label}
+      </p>
+
       <p className="mt-2 text-2xl font-bold text-slate-900">
         {value}
       </p>
