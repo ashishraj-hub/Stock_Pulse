@@ -1,15 +1,9 @@
-import uuid
 from datetime import date, datetime
+from uuid import UUID, uuid4
 
-from sqlalchemy import (
-    String,
-    Date,
-    DateTime,
-    ForeignKey,
-    func,
-)
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, String, func
+from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
 
@@ -17,23 +11,22 @@ from app.db.base import Base
 class Batch(Base):
     __tablename__ = "batches"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid4,
     )
 
-    item_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("items.id", ondelete="CASCADE"),
+    item_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        ForeignKey("items.id"),
         nullable=False,
         index=True,
     )
 
     lot_number: Mapped[str] = mapped_column(
-        String(100),
+        String(255),
         nullable=False,
-        index=True,
     )
 
     expiry_date: Mapped[date | None] = mapped_column(
@@ -48,4 +41,10 @@ class Batch(Base):
         nullable=False,
     )
 
-    item = relationship("Item")
+    is_archived: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+        index=True,
+    )

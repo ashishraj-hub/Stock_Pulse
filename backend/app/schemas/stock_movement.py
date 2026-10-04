@@ -1,7 +1,11 @@
 from uuid import UUID
+
+from datetime import date, datetime
+
 from pydantic import BaseModel, Field
-from datetime import datetime
+
 from app.models.stock_movement import MovementType
+
 
 class ReceiveStockRequest(BaseModel):
     quantity: int = Field(gt=0)
@@ -61,3 +65,8 @@ class StockMovementListItemResponse(BaseModel):
     reason: str | None
 
     created_at: datetime
+
+
+class UsageHistoryItemResponse(BaseModel):
+    date: date
+    quantity: int

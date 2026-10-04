@@ -7,3 +7,12 @@ class DashboardSummaryResponse(BaseModel):
     low_stock_count: int
     out_of_stock_count: int
     pending_reorder_count: int
+
+class ProcurementSummaryResponse(BaseModel):
+    total: int
+    draft: int
+    pending_approval: int
+    approved: int
+    ordered: int
+    received: int
+    cancelled: int

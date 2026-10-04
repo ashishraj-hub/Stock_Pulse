@@ -20,20 +20,17 @@ import {
 import {
   fefoIssueStock,
   issueStock,
-  receiveStock,
   recordWastage,
   transferStock,
 } from "../lib/stock-operations";
 
 type OperationType =
-  | "receive"
   | "issue"
   | "wastage"
   | "transfer"
   | "fefo";
 
 const VALID_OPERATIONS: OperationType[] = [
-  "receive",
   "issue",
   "wastage",
   "transfer",
@@ -59,10 +56,10 @@ export default function StockOperationsPage() {
     useState<InventoryListItem[]>([]);
 
   const [operation, setOperation] =
-    useState<OperationType>("receive");
+    useState<OperationType>("issue");
 
   // Used by normal operations:
-  // Receive, Issue, Wastage, Transfer
+  // Issue, Wastage, Transfer
   const [
     selectedInventoryLotId,
     setSelectedInventoryLotId,
@@ -182,27 +179,15 @@ export default function StockOperationsPage() {
   /*
    * Available lots for normal operations.
    *
-   * Receive:
-   *   any existing lot
-   *
    * Issue/Wastage/Transfer:
    *   only lots with available stock
    */
   const availableLots = useMemo(() => {
-    if (
-      operation === "receive"
-    ) {
-      return inventory;
-    }
-
     return inventory.filter(
       (item) =>
         item.available_quantity > 0,
     );
-  }, [
-    inventory,
-    operation,
-  ]);
+  }, [inventory]);
 
   /*
    * Unique locations.
@@ -559,27 +544,6 @@ export default function StockOperationsPage() {
         user.organization_id;
 
       /*
-       * RECEIVE
-       */
-      if (
-        operation === "receive"
-      ) {
-        await receiveStock(
-          organizationId,
-          selectedLot!.item_id,
-          selectedLot!.batch_id,
-          selectedLot!.location_id,
-          {
-            quantity:
-              numericQuantity,
-            reason:
-              reason.trim() ||
-              undefined,
-          },
-        );
-      }
-
-      /*
        * ISSUE
        */
       if (
@@ -875,10 +839,6 @@ export default function StockOperationsPage() {
                 }}
                 className="mt-2 w-full rounded-lg border px-3 py-2"
               >
-                <option value="receive">
-                  Receive Stock
-                </option>
-
                 <option value="issue">
                   Issue Stock
                 </option>
@@ -897,7 +857,7 @@ export default function StockOperationsPage() {
               </select>
             </div>
 
-            {/* 
+            {/*
               FEFO:
               Item + Location
 
@@ -968,9 +928,7 @@ export default function StockOperationsPage() {
                     {fefoLocationOptions.map(
                       (location) => (
                         <option
-                          key={
-                            location.id
-                          }
+                          key={location.id}
                           value={
                             location.id
                           }

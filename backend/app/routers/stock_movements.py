@@ -1,5 +1,7 @@
+from datetime import date, timedelta
 from uuid import UUID
-from sqlalchemy import select
+
+from sqlalchemy import func, select
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -13,14 +15,17 @@ from app.models.item import Item
 from app.models.location import Location
 from app.models.stock_movement import MovementType, StockMovement
 from app.models.user import User, UserRole
+from app.schemas.forecast import ForecastResponse
+from app.services.forecast import build_forecast
 from app.schemas.stock_movement import (
+    FefoIssueRequest,
     IssueStockRequest,
     ReceiveStockRequest,
-    StockMovementResponse,
     StockMovementListItemResponse,
+    StockMovementResponse,
     TransferStockRequest,
+    UsageHistoryItemResponse,
     WastageStockRequest,
-    FefoIssueRequest,
 )
 
 
@@ -111,30 +116,239 @@ def list_stock_movements(
         results.append(
             StockMovementListItemResponse(
                 id=movement.id,
-
                 item_id=item.id,
                 sku=item.sku,
                 item_name=item.name,
-
                 batch_id=batch.id if batch else None,
                 lot_number=batch.lot_number if batch else None,
-
                 location_id=location.id,
                 location_name=location.name,
-
                 performed_by=user.id if user else None,
                 performed_by_name=user.name if user else None,
-
                 movement_type=movement.movement_type,
                 quantity=movement.quantity,
                 reason=movement.reason,
-
                 created_at=movement.created_at,
             )
         )
 
     return results
 
+
+@router.get(
+    "/items/{item_id}/usage-history",
+    response_model=list[UsageHistoryItemResponse],
+)
+def get_item_usage_history(
+    organization_id: UUID,
+    item_id: UUID,
+    days: int = 30,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Return daily item usage based on ISSUE stock movements.
+
+    Only ISSUE movements are treated as consumption/demand.
+    Receiving, transfers, wastage, and other movement types
+    are intentionally excluded from this first forecasting dataset.
+    """
+
+    # 1. Verify authenticated user belongs to this organization.
+    if current_user.organization_id != organization_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this organization",
+        )
+
+    # 2. Validate requested history length.
+    if days < 1 or days > 365:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="days must be between 1 and 365",
+        )
+
+    # 3. Verify item belongs to this organization.
+    item = db.get(Item, item_id)
+
+    if item is None or item.organization_id != organization_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found",
+        )
+
+    # 4. Determine the date range.
+    today = date.today()
+    start_date = today - timedelta(days=days - 1)
+
+    # 5. Convert the date range into a timezone-aware timestamp range.
+    start_datetime = func.date_trunc(
+        "day",
+        func.now(),
+    )
+
+    # We use a Python datetime range below so that the query remains
+    # straightforward and PostgreSQL can use the created_at index.
+    from datetime import datetime, timezone
+
+    start_datetime_value = datetime.combine(
+        start_date,
+        datetime.min.time(),
+        tzinfo=timezone.utc,
+    )
+
+    end_datetime_value = datetime.combine(
+        today + timedelta(days=1),
+        datetime.min.time(),
+        tzinfo=timezone.utc,
+    )
+
+    # 6. Aggregate ISSUE movements by calendar day.
+    rows = db.execute(
+        select(
+            func.date(
+                StockMovement.created_at
+            ).label("usage_date"),
+            func.sum(
+                StockMovement.quantity
+            ).label("usage_quantity"),
+        )
+        .where(
+            StockMovement.item_id == item_id,
+            StockMovement.movement_type == MovementType.ISSUE,
+            StockMovement.created_at >= start_datetime_value,
+            StockMovement.created_at < end_datetime_value,
+        )
+        .group_by(
+            func.date(StockMovement.created_at),
+        )
+        .order_by(
+            func.date(StockMovement.created_at).asc(),
+        )
+    ).all()
+
+    # 7. Convert database rows into API responses.
+    return [
+        UsageHistoryItemResponse(
+            date=row.usage_date,
+            quantity=int(row.usage_quantity),
+        )
+        for row in rows
+    ]
+
+
+@router.get(
+    "/items/{item_id}/forecast",
+    response_model=ForecastResponse,
+)
+def get_item_forecast(
+    organization_id: UUID,
+    item_id: UUID,
+    history_days: int = 30,
+    forecast_days: int = 7,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.organization_id != organization_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Organization access denied",
+        )
+
+    if history_days < 1 or history_days > 365:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="history_days must be between 1 and 365",
+        )
+
+    if forecast_days < 1 or forecast_days > 90:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="forecast_days must be between 1 and 90",
+        )
+
+    item = db.scalar(
+        select(Item).where(
+            Item.id == item_id,
+            Item.organization_id == organization_id,
+        )
+    )
+
+    if item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found",
+        )
+
+    today = date.today()
+    start_date = today - timedelta(days=history_days - 1)
+    end_date = today + timedelta(days=1)
+
+    usage_rows = db.execute(
+        select(
+            func.date(
+                StockMovement.created_at
+            ).label("usage_date"),
+            func.sum(
+                StockMovement.quantity
+            ).label("usage_quantity"),
+        )
+        .where(
+            StockMovement.item_id == item_id,
+            StockMovement.movement_type == MovementType.ISSUE,
+            StockMovement.created_at >= start_date,
+            StockMovement.created_at < end_date,
+        )
+        .group_by(
+            func.date(
+                StockMovement.created_at
+            )
+        )
+        .order_by(
+            func.date(
+                StockMovement.created_at
+            )
+        )
+    ).all()
+
+    usage_history = [
+        {
+            "date": row.usage_date,
+            "quantity": int(row.usage_quantity),
+        }
+        for row in usage_rows
+    ]
+
+    if len(usage_history) < 3:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                "At least 3 days of usage history are required "
+                "to generate a forecast"
+            ),
+        )
+
+    try:
+        result = build_forecast(
+            usage_history=usage_history,
+            forecast_days=forecast_days,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+
+    return ForecastResponse(
+        item_id=item_id,
+        historical_days=history_days,
+        forecast_days=forecast_days,
+        average_daily_usage=result.average_daily_usage,
+        predicted_daily_usage=result.predicted_daily_usage,
+        forecast=result.forecast,
+        method=result.method,
+        confidence=result.confidence,
+    )
 
 
 @router.post(
@@ -216,22 +430,23 @@ def receive_stock(
     db.flush()
 
     create_audit_log(
-    db,
-    organization_id=organization_id,
-    user_id=current_user.id,
-    action="stock.receive",
-    entity_type="StockMovement",
-    entity_id=movement.id,
-    details={
-        "item_id": str(item_id),
-        "batch_id": str(batch_id),
-        "location_id": str(location_id),
-        "quantity": data.quantity,
-        "reason": data.reason,
-    },
+        db,
+        organization_id=organization_id,
+        user_id=current_user.id,
+        action="stock.receive",
+        entity_type="StockMovement",
+        entity_id=movement.id,
+        details={
+            "item_id": str(item_id),
+            "batch_id": str(batch_id),
+            "location_id": str(location_id),
+            "quantity": data.quantity,
+            "reason": data.reason,
+        },
     )
 
     db.commit()
+
     # 8. Refresh movement from database.
     db.refresh(movement)
 
@@ -251,7 +466,7 @@ def issue_stock(
     data: IssueStockRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-    require_roles(UserRole.ADMIN, UserRole.STAFF)
+        require_roles(UserRole.ADMIN, UserRole.STAFF)
     ),
 ):
     if current_user.organization_id != organization_id:
@@ -325,8 +540,6 @@ def issue_stock(
     db.add(movement)
     db.flush()
 
-    print("DEBUG movement.id =", movement.id)
-
     create_audit_log(
         db,
         organization_id=organization_id,
@@ -362,7 +575,7 @@ def record_wastage(
     data: WastageStockRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-    require_roles(UserRole.ADMIN, UserRole.STAFF)
+        require_roles(UserRole.ADMIN, UserRole.STAFF)
     ),
 ):
     if current_user.organization_id != organization_id:
@@ -372,6 +585,7 @@ def record_wastage(
         )
 
     item = db.get(Item, item_id)
+
     if item is None or item.organization_id != organization_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -379,6 +593,7 @@ def record_wastage(
         )
 
     batch = db.get(Batch, batch_id)
+
     if batch is None or batch.item_id != item_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -386,6 +601,7 @@ def record_wastage(
         )
 
     location = db.get(Location, location_id)
+
     if location is None or location.organization_id != organization_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -469,7 +685,7 @@ def transfer_stock(
     data: TransferStockRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-    require_roles(UserRole.ADMIN, UserRole.STAFF)
+        require_roles(UserRole.ADMIN, UserRole.STAFF)
     ),
 ):
     if current_user.organization_id != organization_id:
@@ -485,6 +701,7 @@ def transfer_stock(
         )
 
     item = db.get(Item, item_id)
+
     if item is None or item.organization_id != organization_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -492,6 +709,7 @@ def transfer_stock(
         )
 
     batch = db.get(Batch, batch_id)
+
     if batch is None or batch.item_id != item_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -596,21 +814,21 @@ def transfer_stock(
     db.flush()
 
     create_audit_log(
-    db,
-    organization_id=organization_id,
-    user_id=current_user.id,
-    action="stock.transfer",
-    entity_type="StockMovement",
-    entity_id=source_movement.id,
-    details={
-        "item_id": str(item_id),
-        "batch_id": str(batch_id),
-        "source_location_id": str(location_id),
-        "destination_location_id": str(data.destination_location_id),
-        "quantity": data.quantity,
-        "reason": data.reason,
-        "destination_movement_id": str(destination_movement.id),
-    },
+        db,
+        organization_id=organization_id,
+        user_id=current_user.id,
+        action="stock.transfer",
+        entity_type="StockMovement",
+        entity_id=source_movement.id,
+        details={
+            "item_id": str(item_id),
+            "batch_id": str(batch_id),
+            "source_location_id": str(location_id),
+            "destination_location_id": str(data.destination_location_id),
+            "quantity": data.quantity,
+            "reason": data.reason,
+            "destination_movement_id": str(destination_movement.id),
+        },
     )
 
     db.commit()
@@ -633,7 +851,7 @@ def fefo_issue_stock(
     data: FefoIssueRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-    require_roles(UserRole.ADMIN, UserRole.STAFF)
+        require_roles(UserRole.ADMIN, UserRole.STAFF)
     ),
 ):
     if current_user.organization_id != organization_id:
@@ -643,6 +861,7 @@ def fefo_issue_stock(
         )
 
     item = db.get(Item, item_id)
+
     if item is None or item.organization_id != organization_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -650,6 +869,7 @@ def fefo_issue_stock(
         )
 
     location = db.get(Location, location_id)
+
     if location is None or location.organization_id != organization_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -746,5 +966,3 @@ def fefo_issue_stock(
         db.refresh(movement)
 
     return movements
-
-

@@ -5,9 +5,17 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.dependencies import get_db
+from app.core.audit import create_audit_log
+from app.core.dependencies import get_current_user, require_roles
+from app.models.inventory_lot import InventoryLot
+from app.models.user import User, UserRole
 from app.models.batch import Batch
 from app.models.item import Item
-from app.schemas.batch import BatchCreate, BatchResponse
+from app.schemas.batch import (
+    BatchArchiveResponse,
+    BatchCreate,
+    BatchResponse,
+)
 
 
 router = APIRouter(
@@ -114,3 +122,82 @@ def get_batch(
         )
 
     return batch
+
+
+@router.post(
+    "/{batch_id}/archive",
+    response_model=BatchArchiveResponse,
+)
+def archive_batch(
+    organization_id: UUID,
+    batch_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(UserRole.ADMIN)
+    ),
+):
+    if current_user.organization_id != organization_id:
+        raise HTTPException(
+            status_code=403,
+            detail="You do not have access to this organization",
+        )
+
+    batch = db.scalar(
+        select(Batch)
+        .join(Item, Item.id == Batch.item_id)
+        .where(
+            Batch.id == batch_id,
+            Item.organization_id == organization_id,
+        )
+    )
+
+    if batch is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Batch not found",
+        )
+
+    if batch.is_archived:
+        raise HTTPException(
+            status_code=409,
+            detail="Batch is already archived",
+        )
+
+    inventory_lots = db.scalars(
+        select(InventoryLot).where(
+            InventoryLot.batch_id == batch.id,
+        )
+    ).all()
+
+    total_available = sum(
+        lot.quantity_on_hand - lot.reserved_quantity
+        for lot in inventory_lots
+    )
+
+    if total_available > 0:
+        raise HTTPException(
+            status_code=409,
+            detail="Batch cannot be archived while available stock remains",
+        )
+
+    batch.is_archived = True
+
+    create_audit_log(
+        db,
+        organization_id=organization_id,
+        user_id=current_user.id,
+        action="batch.archived",
+        entity_type="batch",
+        entity_id=batch.id,
+        details={
+            "lot_number": batch.lot_number,
+        },
+    )
+
+    db.commit()
+
+    return BatchArchiveResponse(
+        id=batch.id,
+        lot_number=batch.lot_number,
+        is_archived=batch.is_archived,
+    )

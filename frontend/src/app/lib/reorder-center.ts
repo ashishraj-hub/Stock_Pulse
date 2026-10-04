@@ -47,3 +47,17 @@ export async function createReorderPurchaseOrder(
     },
   );
 }
+
+export async function createSmartReorderPurchaseOrder(
+  organizationId: string,
+  itemId: string,
+  payload: ReorderPurchaseOrderRequest,
+): Promise<ReorderPurchaseOrderResponse> {
+  return apiRequest<ReorderPurchaseOrderResponse>(
+    `/api/v1/organizations/${organizationId}/items/${itemId}/smart-reorder/purchase-order`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}

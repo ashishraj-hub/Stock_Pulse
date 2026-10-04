@@ -22,10 +22,13 @@ import {
   type ReorderSuggestion,
 } from "../lib/reorder";
 
+import {
+  getProcurementSummary,
+  type ProcurementSummary,
+} from "../lib/procurement";
+
 export default function DashboardPage() {
-  const [user, setUser] = useState<CurrentUser | null>(
-    null,
-  );
+  const [user, setUser] = useState<CurrentUser | null>(null);
 
   const [summary, setSummary] =
     useState<DashboardSummary | null>(null);
@@ -40,6 +43,12 @@ export default function DashboardPage() {
     useState(false);
 
   const [suggestionError, setSuggestionError] =
+    useState("");
+
+  const [procurement, setProcurement] =
+    useState<ProcurementSummary | null>(null);
+
+  const [procurementError, setProcurementError] =
     useState("");
 
   const [error, setError] = useState("");
@@ -64,6 +73,21 @@ export default function DashboardPage() {
           );
 
         setLowStockItems(lowStock);
+
+        try {
+          const procurementSummary =
+            await getProcurementSummary(
+              currentUser.organization_id,
+            );
+
+          setProcurement(procurementSummary);
+        } catch (err) {
+          setProcurementError(
+            err instanceof Error
+              ? err.message
+              : "Failed to load procurement summary",
+          );
+        }
       } catch (err) {
         setError(
           err instanceof Error
@@ -130,7 +154,7 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen p-8">
-      <div className="max-w-6xl mx-auto">
+      <div className="mx-auto max-w-6xl">
 
         {/* Header */}
         <div className="mb-8">
@@ -173,6 +197,83 @@ export default function DashboardPage() {
             title="Pending Reorders"
             value={summary.pending_reorder_count}
           />
+        </div>
+
+        {/* Procurement Summary */}
+        <div className="mt-8">
+          <div className="mb-4">
+            <h2 className="text-2xl font-bold">
+              Procurement Summary
+            </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Current purchase order status across your organization.
+            </p>
+          </div>
+
+          {procurementError ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+              <p className="text-sm text-red-700">
+                {procurementError}
+              </p>
+            </div>
+          ) : !procurement ? (
+            <div className="rounded-xl border bg-white p-6 shadow-sm">
+              <p className="text-sm text-gray-500">
+                Loading procurement summary...
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Total purchase orders */}
+              <div className="mb-4">
+                <div className="rounded-xl border bg-white p-5 shadow-sm">
+                  <p className="text-sm text-gray-500">
+                    Total Purchase Orders
+                  </p>
+
+                  <p className="mt-2 text-3xl font-bold">
+                    {procurement.total}
+                  </p>
+                </div>
+              </div>
+
+              {/* Procurement status cards */}
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+
+                <ProcurementCard
+                  title="Draft"
+                  value={procurement.draft}
+                />
+
+                <ProcurementCard
+                  title="Pending Approval"
+                  value={procurement.pending_approval}
+                />
+
+                <ProcurementCard
+                  title="Approved"
+                  value={procurement.approved}
+                />
+
+                <ProcurementCard
+                  title="Ordered"
+                  value={procurement.ordered}
+                />
+
+                <ProcurementCard
+                  title="Received"
+                  value={procurement.received}
+                />
+
+                <ProcurementCard
+                  title="Cancelled"
+                  value={procurement.cancelled}
+                />
+
+              </div>
+            </>
+          )}
         </div>
 
         {/* Low stock items */}
@@ -398,6 +499,28 @@ function DashboardCard({
       </p>
 
       <p className="mt-2 text-3xl font-bold">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+interface ProcurementCardProps {
+  title: string;
+  value: number;
+}
+
+function ProcurementCard({
+  title,
+  value,
+}: ProcurementCardProps) {
+  return (
+    <div className="rounded-xl border bg-white p-4 shadow-sm">
+      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+        {title}
+      </p>
+
+      <p className="mt-2 text-2xl font-bold text-gray-900">
         {value}
       </p>
     </div>

@@ -59,6 +59,13 @@ def create_inventory_lot(
             detail="Batch not found",
         )
 
+    # Do not allow inventory to be created for an archived batch.
+    if batch.is_archived:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot create inventory for an archived batch",
+        )
+
     # 3. Verify that the location belongs to this organization.
     location = db.get(Location, inventory_data.location_id)
 
@@ -125,9 +132,18 @@ def list_inventory_lots(
             detail="Batch not found",
         )
 
+    # Archived batches are not part of active inventory.
+    if batch.is_archived:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Batch not found",
+        )
+
     statement = (
         select(InventoryLot)
-        .where(InventoryLot.batch_id == batch_id)
+        .where(
+            InventoryLot.batch_id == batch_id,
+        )
         .order_by(InventoryLot.updated_at)
     )
 
@@ -163,6 +179,13 @@ def get_inventory_lot(
             detail="Batch not found",
         )
 
+    # Archived batches are not part of active inventory.
+    if batch.is_archived:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Batch not found",
+        )
+
     inventory_lot = db.get(InventoryLot, inventory_lot_id)
 
     if (
@@ -175,6 +198,7 @@ def get_inventory_lot(
         )
 
     return inventory_lot
+
 
 @organization_inventory_router.get(
     "/inventory",
@@ -204,8 +228,12 @@ def list_inventory(
         .where(
             Item.organization_id == organization_id,
             Location.organization_id == organization_id,
+            Batch.is_archived.is_(False),
         )
-        .order_by(Item.name.asc(), Batch.expiry_date.asc().nullslast())
+        .order_by(
+            Item.name.asc(),
+            Batch.expiry_date.asc().nullslast(),
+        )
     ).all()
 
     results = []

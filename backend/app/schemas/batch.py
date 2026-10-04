@@ -1,11 +1,11 @@
 from datetime import date, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class BatchCreate(BaseModel):
-    lot_number: str = Field(min_length=1, max_length=100)
+    lot_number: str
     expiry_date: date | None = None
 
 
@@ -17,3 +17,10 @@ class BatchResponse(BaseModel):
     lot_number: str
     expiry_date: date | None
     received_at: datetime
+    is_archived: bool
+
+
+class BatchArchiveResponse(BaseModel):
+    id: UUID
+    lot_number: str
+    is_archived: bool

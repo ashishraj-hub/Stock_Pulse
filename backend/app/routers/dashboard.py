@@ -2,10 +2,16 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func, select
 
 from app.core.dependencies import get_current_user
 from app.db.dependencies import get_db
 from app.models.user import User
+from app.models.purchase_order import (
+    PurchaseOrder,
+    PurchaseOrderStatus,
+)
+from app.schemas.dashboard import ProcurementSummaryResponse
 from app.schemas.low_stock import LowStockItemResponse
 from app.services.low_stock import get_low_stock_items
 from app.schemas.dashboard import DashboardSummaryResponse
@@ -76,3 +82,54 @@ def dashboard_summary(
     )
 
     return DashboardSummaryResponse(**result)
+
+
+@router.get(
+    "/procurement-summary",
+    response_model=ProcurementSummaryResponse,
+)
+def get_procurement_summary(
+    organization_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.organization_id != organization_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this organization.",
+        )
+
+    rows = db.execute(
+        select(
+            PurchaseOrder.status,
+            func.count(PurchaseOrder.id),
+        )
+        .where(
+            PurchaseOrder.organization_id == organization_id,
+        )
+        .group_by(PurchaseOrder.status)
+    ).all()
+
+    counts = {
+        PurchaseOrderStatus.DRAFT: 0,
+        PurchaseOrderStatus.PENDING_APPROVAL: 0,
+        PurchaseOrderStatus.APPROVED: 0,
+        PurchaseOrderStatus.ORDERED: 0,
+        PurchaseOrderStatus.RECEIVED: 0,
+        PurchaseOrderStatus.CANCELLED: 0,
+    }
+
+    for status_value, count in rows:
+        counts[status_value] = count
+
+    return ProcurementSummaryResponse(
+        total=sum(counts.values()),
+        draft=counts[PurchaseOrderStatus.DRAFT],
+        pending_approval=counts[
+            PurchaseOrderStatus.PENDING_APPROVAL
+        ],
+        approved=counts[PurchaseOrderStatus.APPROVED],
+        ordered=counts[PurchaseOrderStatus.ORDERED],
+        received=counts[PurchaseOrderStatus.RECEIVED],
+        cancelled=counts[PurchaseOrderStatus.CANCELLED],
+    )

@@ -1,64 +1,59 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
-import { getSuppliers, Supplier } from "../lib/suppliers";
+import { getCurrentUser, type CurrentUser } from "../lib/auth";
 import {
-  createReorderPurchaseOrder,
   getReorderCenter,
-  ReorderCenterItem,
+  type ReorderCenterItem,
 } from "../lib/reorder-center";
 
 const ORGANIZATION_ID =
   "addc299a-6ab4-4399-83ab-490ce15f3faa";
 
 export default function ReorderCenterPage() {
+  const [currentUser, setCurrentUser] =
+    useState<CurrentUser | null>(null);
+
   const [items, setItems] = useState<ReorderCenterItem[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [selectedItem, setSelectedItem] =
-    useState<ReorderCenterItem | null>(null);
-
-  const [selectedSupplierId, setSelectedSupplierId] =
-    useState("");
-
-  const [quantity, setQuantity] = useState("");
-  const [notes, setNotes] = useState("");
-
-  const [creating, setCreating] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
-
-  async function loadData() {
-    try {
-      setLoading(true);
-      setError("");
-
-      const [reorderData, supplierData] = await Promise.all([
-        getReorderCenter(ORGANIZATION_ID),
-        getSuppliers(ORGANIZATION_ID),
-      ]);
-
-      setItems(reorderData);
-      setSuppliers(supplierData);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load reorder center",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    loadData();
+    async function loadReorderCenter() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const user = await getCurrentUser();
+
+        setCurrentUser(user);
+
+        const data = await getReorderCenter(
+          user.organization_id,
+        );
+
+        setItems(data);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load Reorder Center.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadReorderCenter();
   }, []);
 
-  const lowStockCount = items.length;
+  const lowStockItems = useMemo(
+    () => items.filter((item) => item.is_low_stock),
+    [items],
+  );
 
   const totalSuggestedUnits = useMemo(
     () =>
@@ -69,371 +64,260 @@ export default function ReorderCenterPage() {
     [items],
   );
 
-  function openPurchaseOrder(item: ReorderCenterItem) {
-    setSelectedItem(item);
-    setSelectedSupplierId("");
-    setQuantity(String(item.suggested_quantity));
-    setNotes(
-      `Created from low-stock reorder suggestion for ${item.name}`,
-    );
-    setSuccessMessage("");
-    setError("");
-  }
-
-  function closePurchaseOrder() {
-    if (creating) {
-      return;
-    }
-
-    setSelectedItem(null);
-    setSelectedSupplierId("");
-    setQuantity("");
-    setNotes("");
-  }
-
-  async function handleCreatePurchaseOrder() {
-    if (!selectedItem) {
-      return;
-    }
-
-    if (!selectedSupplierId) {
-      setError("Please select a supplier.");
-      return;
-    }
-
-    const parsedQuantity = Number(quantity);
-
-    if (
-      !Number.isInteger(parsedQuantity) ||
-      parsedQuantity <= 0
-    ) {
-      setError("Quantity must be a positive whole number.");
-      return;
-    }
-
-    try {
-      setCreating(true);
-      setError("");
-      setSuccessMessage("");
-
-      const result = await createReorderPurchaseOrder(
-        ORGANIZATION_ID,
-        {
-          item_id: selectedItem.item_id,
-          supplier_id: selectedSupplierId,
-          quantity: parsedQuantity,
-          notes: notes.trim() || undefined,
-        },
-      );
-
-      setSuccessMessage(
-        `Purchase order created successfully. PO: ${result.purchase_order_id}`,
-      );
-
-      setSelectedItem(null);
-      setSelectedSupplierId("");
-      setQuantity("");
-      setNotes("");
-
-      await loadData();
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to create purchase order",
-      );
-    } finally {
-      setCreating(false);
-    }
-  }
-
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-950 p-8 text-white">
+      <main className="min-h-screen bg-slate-50 p-6">
         <div className="mx-auto max-w-7xl">
-          <p className="text-slate-400">
-            Loading reorder center...
-          </p>
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-sm text-slate-600">
+              Loading Reorder Center...
+            </p>
+          </div>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 p-8 text-white">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <header>
-          <p className="text-sm font-medium text-blue-400">
-            PROCUREMENT
-          </p>
+    <main className="min-h-screen bg-slate-50 p-6">
+      <div className="mx-auto max-w-7xl space-y-6">
 
-          <h1 className="mt-2 text-3xl font-bold">
-            Reorder Center
-          </h1>
+        {/* Header */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm font-medium text-blue-600">
+              StockPulse Procurement
+            </p>
 
-          <p className="mt-2 text-slate-400">
-            Review low-stock items and create draft purchase
-            orders from reorder recommendations.
-          </p>
-        </header>
+            <h1 className="mt-1 text-3xl font-bold text-slate-900">
+              Reorder Center
+            </h1>
 
+            <p className="mt-2 max-w-2xl text-sm text-slate-600">
+              Review inventory items that may require
+              replenishment and open their Smart Reorder analysis.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-100"
+            >
+              Dashboard
+            </Link>
+
+            <Link
+              href="/smart-reorder"
+              className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+            >
+              Smart Reorder
+            </Link>
+          </div>
+        </div>
+
+        {/* Error */}
         {error && (
-          <div className="rounded-lg border border-red-800 bg-red-950/50 p-4 text-sm text-red-300">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         )}
 
-        {successMessage && (
-          <div className="rounded-lg border border-green-800 bg-green-950/50 p-4 text-sm text-green-300">
-            {successMessage}
-          </div>
-        )}
-
+        {/* Summary */}
         <section className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-sm text-slate-400">
-              Low-stock items
-            </p>
 
-            <p className="mt-2 text-3xl font-bold">
-              {lowStockCount}
-            </p>
-          </div>
+          <MetricCard
+            label="Items in Reorder Center"
+            value={items.length}
+          />
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-sm text-slate-400">
-              Suggested units
-            </p>
+          <MetricCard
+            label="Currently Low Stock"
+            value={lowStockItems.length}
+          />
 
-            <p className="mt-2 text-3xl font-bold">
-              {totalSuggestedUnits}
-            </p>
-          </div>
+          <MetricCard
+            label="Suggested Reorder Units"
+            value={totalSuggestedUnits}
+          />
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-sm text-slate-400">
-              Suppliers
-            </p>
-
-            <p className="mt-2 text-3xl font-bold">
-              {suppliers.length}
-            </p>
-          </div>
         </section>
 
-        <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
-          <div className="border-b border-slate-800 p-5">
-            <h2 className="text-lg font-semibold">
-              Items requiring reorder
+        {/* Main table */}
+        <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+
+          <div className="border-b border-slate-200 px-6 py-5">
+            <h2 className="text-lg font-semibold text-slate-900">
+              Replenishment Candidates
             </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Review the current inventory position before
+              opening the demand-based Smart Reorder analysis.
+            </p>
           </div>
 
           {items.length === 0 ? (
-            <div className="p-8 text-center text-slate-400">
-              No items currently require reordering.
+            <div className="px-6 py-12 text-center">
+              <p className="text-sm font-medium text-slate-700">
+                No replenishment candidates found.
+              </p>
+
+              <p className="mt-1 text-sm text-slate-500">
+                StockPulse currently has no items returned by the
+                Reorder Center.
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-slate-800 bg-slate-950/50">
+              <table className="min-w-full divide-y divide-slate-200">
+
+                <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-5 py-4 font-medium text-slate-400">
-                      Item
-                    </th>
-
-                    <th className="px-5 py-4 font-medium text-slate-400">
-                      SKU
-                    </th>
-
-                    <th className="px-5 py-4 font-medium text-slate-400">
-                      Available
-                    </th>
-
-                    <th className="px-5 py-4 font-medium text-slate-400">
-                      Reorder Point
-                    </th>
-
-                    <th className="px-5 py-4 font-medium text-slate-400">
-                      Suggested
-                    </th>
-
-                    <th className="px-5 py-4 font-medium text-slate-400">
-                      Lead Time
-                    </th>
-
-                    <th className="px-5 py-4 font-medium text-slate-400">
-                      Action
-                    </th>
+                    <TableHeader>Item</TableHeader>
+                    <TableHeader>Available</TableHeader>
+                    <TableHeader>Reorder Point</TableHeader>
+                    <TableHeader>Suggested Qty</TableHeader>
+                    <TableHeader>Lead Time</TableHeader>
+                    <TableHeader>Status</TableHeader>
+                    <TableHeader>Action</TableHeader>
                   </tr>
                 </thead>
 
-                <tbody>
+                <tbody className="divide-y divide-slate-100 bg-white">
+
                   {items.map((item) => (
                     <tr
                       key={item.item_id}
-                      className="border-b border-slate-800 last:border-b-0"
+                      className="hover:bg-slate-50"
                     >
-                      <td className="px-5 py-4 font-medium">
-                        {item.name}
+
+                      {/* Item */}
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {item.name}
+                          </p>
+
+                          <p className="mt-1 text-xs text-slate-500">
+                            SKU: {item.sku}
+                          </p>
+                        </div>
                       </td>
 
-                      <td className="px-5 py-4 text-slate-400">
-                        {item.sku}
-                      </td>
-
-                      <td className="px-5 py-4">
-                        <span className="font-semibold text-red-400">
+                      {/* Available */}
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <span className="text-sm font-semibold text-slate-900">
                           {item.available_quantity}
                         </span>
                       </td>
 
-                      <td className="px-5 py-4 text-slate-300">
-                        {item.reorder_point}
+                      {/* Reorder Point */}
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <span className="text-sm text-slate-700">
+                          {item.reorder_point}
+                        </span>
                       </td>
 
-                      <td className="px-5 py-4 font-semibold text-blue-400">
-                        {item.suggested_quantity}
+                      {/* Suggested */}
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <span className="text-sm font-semibold text-blue-700">
+                          {item.suggested_quantity}
+                        </span>
                       </td>
 
-                      <td className="px-5 py-4 text-slate-300">
-                        {item.lead_time_days} days
+                      {/* Lead time */}
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <span className="text-sm text-slate-700">
+                          {item.lead_time_days} days
+                        </span>
                       </td>
 
-                      <td className="px-5 py-4">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            openPurchaseOrder(item)
-                          }
-                          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+                      {/* Status */}
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <StatusBadge
+                          isLowStock={item.is_low_stock}
+                        />
+                      </td>
+
+                      {/* Action */}
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <Link
+                          href={`/smart-reorder?itemId=${encodeURIComponent(
+                            item.item_id,
+                          )}`}
+                          className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
                         >
-                          Create PO
-                        </button>
+                          Analyze
+                        </Link>
                       </td>
+
                     </tr>
                   ))}
+
                 </tbody>
+
               </table>
             </div>
           )}
         </section>
 
-        {selectedItem && (
-          <section className="rounded-xl border border-blue-800 bg-slate-900 p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm text-blue-400">
-                  CREATE DRAFT PURCHASE ORDER
-                </p>
-
-                <h2 className="mt-1 text-xl font-semibold">
-                  {selectedItem.name}
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-400">
-                  SKU: {selectedItem.sku}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={closePurchaseOrder}
-                className="text-sm text-slate-400 hover:text-white"
-                disabled={creating}
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="mt-6 grid gap-5 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">
-                  Supplier
-                </label>
-
-                <select
-                  value={selectedSupplierId}
-                  onChange={(event) =>
-                    setSelectedSupplierId(event.target.value)
-                  }
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-blue-500"
-                >
-                  <option value="">
-                    Select supplier
-                  </option>
-
-                  {suppliers.map((supplier) => (
-                    <option
-                      key={supplier.id}
-                      value={supplier.id}
-                    >
-                      {supplier.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">
-                  Quantity
-                </label>
-
-                <input
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(event) =>
-                    setQuantity(event.target.value)
-                  }
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-blue-500"
-                />
-
-                <p className="mt-1 text-xs text-slate-500">
-                  Suggested quantity:{" "}
-                  {selectedItem.suggested_quantity}
-                </p>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-slate-300">
-                  Notes
-                </label>
-
-                <textarea
-                  value={notes}
-                  onChange={(event) =>
-                    setNotes(event.target.value)
-                  }
-                  rows={3}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={closePurchaseOrder}
-                disabled={creating}
-                className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCreatePurchaseOrder}
-                disabled={creating}
-                className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {creating
-                  ? "Creating..."
-                  : "Create Draft PO"}
-              </button>
-            </div>
-          </section>
-        )}
       </div>
     </main>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p className="text-sm font-medium text-slate-500">
+        {label}
+      </p>
+
+      <p className="mt-2 text-2xl font-bold text-slate-900">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function TableHeader({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <th
+      scope="col"
+      className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
+    >
+      {children}
+    </th>
+  );
+}
+
+function StatusBadge({
+  isLowStock,
+}: {
+  isLowStock: boolean;
+}) {
+  if (isLowStock) {
+    return (
+      <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+        Low Stock
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+      Above Reorder Point
+    </span>
   );
 }
