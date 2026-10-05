@@ -33,10 +33,10 @@ function MetricCard({
   description: string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-sm font-medium text-slate-500">{label}</p>
+    <div className="rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-lg shadow-black/20">
+      <p className="text-sm font-medium text-slate-400">{label}</p>
 
-      <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
+      <p className="mt-2 text-3xl font-semibold tracking-tight text-white">
         {typeof value === "number" ? formatNumber(value) : value}
       </p>
 
@@ -53,12 +53,12 @@ function MovementCard({
   value: number;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+    <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
+      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
         {label}
       </p>
 
-      <p className="mt-2 text-2xl font-semibold text-slate-950">
+      <p className="mt-2 text-2xl font-semibold text-white">
         {formatNumber(value)}
       </p>
 
@@ -83,7 +83,7 @@ function UsageChart({
 
   return (
     <div>
-      <div className="flex h-64 items-end gap-2 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 px-4 pb-4 pt-6">
+      <div className="flex h-64 items-end gap-2 overflow-hidden rounded-xl border border-slate-700 bg-slate-950 px-4 pb-4 pt-6">
         {recentUsage.map((entry) => {
           const height =
             entry.quantity === 0
@@ -95,17 +95,17 @@ function UsageChart({
               key={entry.date}
               className="flex min-w-0 flex-1 flex-col items-center justify-end gap-2"
             >
-              <span className="text-[10px] font-medium text-slate-500">
+              <span className="text-[10px] font-medium text-slate-300">
                 {entry.quantity}
               </span>
 
               <div
-                className="w-full max-w-8 rounded-t-md bg-slate-900"
+                className="w-full max-w-8 rounded-t-md bg-cyan-400"
                 style={{ height }}
                 title={`${formatDate(entry.date)}: ${entry.quantity} units`}
               />
 
-              <span className="text-[10px] text-slate-400">
+              <span className="text-[10px] text-slate-500">
                 {new Date(`${entry.date}T00:00:00`).getDate()}
               </span>
             </div>
@@ -117,6 +117,24 @@ function UsageChart({
         <span>Last {recentUsage.length} days</span>
         <span>Daily issued units</span>
       </div>
+    </div>
+  );
+}
+
+function SectionTitle({
+  title,
+  description,
+}: {
+  title: string;
+  description?: string;
+}) {
+  return (
+    <div>
+      <h2 className="text-lg font-semibold text-white">{title}</h2>
+
+      {description && (
+        <p className="mt-1 text-sm text-slate-400">{description}</p>
+      )}
     </div>
   );
 }
@@ -164,12 +182,10 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-50 p-6">
+      <main className="min-h-screen bg-slate-950 p-6 text-white">
         <div className="mx-auto max-w-7xl">
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-            <p className="text-sm text-slate-500">
-              Loading analytics...
-            </p>
+          <div className="rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-lg">
+            <p className="text-sm text-slate-300">Loading analytics...</p>
           </div>
         </div>
       </main>
@@ -178,14 +194,14 @@ export default function AnalyticsPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-slate-50 p-6">
+      <main className="min-h-screen bg-slate-950 p-6">
         <div className="mx-auto max-w-7xl">
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-            <h1 className="text-lg font-semibold text-red-900">
+          <div className="rounded-2xl border border-red-900/70 bg-red-950/40 p-6">
+            <h1 className="text-lg font-semibold text-red-300">
               Unable to load analytics
             </h1>
 
-            <p className="mt-2 text-sm text-red-700">{error}</p>
+            <p className="mt-2 text-sm text-red-400">{error}</p>
           </div>
         </div>
       </main>
@@ -194,10 +210,10 @@ export default function AnalyticsPage() {
 
   if (!analytics || !currentUser) {
     return (
-      <main className="min-h-screen bg-slate-50 p-6">
+      <main className="min-h-screen bg-slate-950 p-6">
         <div className="mx-auto max-w-7xl">
-          <div className="rounded-2xl border border-slate-200 bg-white p-8">
-            <p className="text-sm text-slate-500">
+          <div className="rounded-2xl border border-slate-700 bg-slate-900 p-8">
+            <p className="text-sm text-slate-400">
               No analytics data available.
             </p>
           </div>
@@ -207,41 +223,36 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 p-6">
+    <main className="min-h-screen bg-slate-950 p-6 text-white">
       <div className="mx-auto max-w-7xl space-y-6">
-        {/* Header */}
         <section>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500">
+              <p className="text-sm font-medium text-cyan-400">
                 Stock & Usage Analytics
               </p>
 
-              <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-950">
+              <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">
                 Inventory intelligence
               </h1>
 
-              <p className="mt-2 max-w-2xl text-sm text-slate-600">
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
                 Monitor inventory health, stock movements, usage patterns,
                 forecast demand, and upcoming expiry risks.
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm">
+            <div className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 shadow-lg shadow-black/20">
               <p className="text-xs text-slate-500">Analysis window</p>
-              <p className="mt-1 font-medium text-slate-900">
-                Last 30 days
-              </p>
+
+              <p className="mt-1 font-medium text-white">Last 30 days</p>
             </div>
           </div>
         </section>
 
-        {/* Inventory overview */}
         <section>
           <div className="mb-3">
-            <h2 className="text-lg font-semibold text-slate-950">
-              Inventory Overview
-            </h2>
+            <SectionTitle title="Inventory Overview" />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -271,26 +282,21 @@ export default function AnalyticsPage() {
           </div>
         </section>
 
-        {/* Usage + Forecast */}
         <section className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-950">
-                  Usage Trend
-                </h2>
+          <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-lg shadow-black/20">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <SectionTitle
+                title="Usage Trend"
+                description="Daily stock issued over the recent period."
+              />
 
-                <p className="mt-1 text-sm text-slate-500">
-                  Daily stock issued over the recent period.
-                </p>
-              </div>
-
-              <div className="flex gap-5">
+              <div className="flex gap-6">
                 <div>
                   <p className="text-xs text-slate-500">
                     Average daily usage
                   </p>
-                  <p className="mt-1 text-lg font-semibold text-slate-950">
+
+                  <p className="mt-1 text-lg font-semibold text-white">
                     {formatDecimal(analytics.average_daily_usage)}
                   </p>
                 </div>
@@ -299,7 +305,8 @@ export default function AnalyticsPage() {
                   <p className="text-xs text-slate-500">
                     Predicted daily usage
                   </p>
-                  <p className="mt-1 text-lg font-semibold text-slate-950">
+
+                  <p className="mt-1 text-lg font-semibold text-cyan-300">
                     {formatDecimal(analytics.predicted_daily_usage)}
                   </p>
                 </div>
@@ -311,32 +318,29 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-950">
-              Reorder Intelligence
-            </h2>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Forecast-driven replenishment opportunities.
-            </p>
+          <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-lg shadow-black/20">
+            <SectionTitle
+              title="Reorder Intelligence"
+              description="Forecast-driven replenishment opportunities."
+            />
 
             <div className="mt-6 space-y-4">
-              <div className="rounded-xl bg-slate-50 p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                   Forecast reorder candidates
                 </p>
 
-                <p className="mt-2 text-3xl font-semibold text-slate-950">
+                <p className="mt-2 text-3xl font-semibold text-white">
                   {formatNumber(analytics.forecast_reorder_count)}
                 </p>
               </div>
 
-              <div className="rounded-xl bg-slate-50 p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                   Suggested reorder units
                 </p>
 
-                <p className="mt-2 text-3xl font-semibold text-slate-950">
+                <p className="mt-2 text-3xl font-semibold text-cyan-300">
                   {formatNumber(analytics.forecast_reorder_units)}
                 </p>
               </div>
@@ -344,17 +348,11 @@ export default function AnalyticsPage() {
           </div>
         </section>
 
-        {/* Stock movement */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-950">
-              Stock Movement
-            </h2>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Units recorded through inventory transactions.
-            </p>
-          </div>
+        <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-lg shadow-black/20">
+          <SectionTitle
+            title="Stock Movement"
+            description="Units recorded through inventory transactions."
+          />
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <MovementCard
@@ -379,36 +377,32 @@ export default function AnalyticsPage() {
           </div>
         </section>
 
-        {/* Top consumed items */}
         <section className="grid gap-6 xl:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-950">
-              Top Consumed Items
-            </h2>
+          <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-lg shadow-black/20">
+            <SectionTitle
+              title="Top Consumed Items"
+              description="Items with the highest issued quantity."
+            />
 
-            <p className="mt-1 text-sm text-slate-500">
-              Items with the highest issued quantity.
-            </p>
-
-            <div className="mt-5 overflow-hidden rounded-xl border border-slate-200">
+            <div className="mt-5 overflow-hidden rounded-xl border border-slate-700">
               {analytics.top_consumed_items.length === 0 ? (
-                <div className="p-5 text-sm text-slate-500">
+                <div className="bg-slate-950 p-5 text-sm text-slate-400">
                   No consumption data available.
                 </div>
               ) : (
-                <div className="divide-y divide-slate-200">
+                <div className="divide-y divide-slate-800">
                   {analytics.top_consumed_items.map((item, index) => (
                     <div
                       key={item.item_id}
-                      className="flex items-center justify-between gap-4 p-4"
+                      className="flex items-center justify-between gap-4 bg-slate-950 p-4 transition hover:bg-slate-900"
                     >
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-xs font-semibold text-cyan-300">
                           {index + 1}
                         </div>
 
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-slate-900">
+                          <p className="truncate text-sm font-medium text-white">
                             {item.name}
                           </p>
 
@@ -419,7 +413,7 @@ export default function AnalyticsPage() {
                       </div>
 
                       <div className="shrink-0 text-right">
-                        <p className="text-sm font-semibold text-slate-950">
+                        <p className="text-sm font-semibold text-white">
                           {formatNumber(item.quantity)}
                         </p>
 
@@ -434,41 +428,35 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          {/* Expiring inventory */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-lg shadow-black/20">
             <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-950">
-                  Expiring Inventory
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Inventory approaching its expiry date.
-                </p>
-              </div>
+              <SectionTitle
+                title="Expiring Inventory"
+                description="Inventory approaching its expiry date."
+              />
 
               {analytics.expiring_items.length > 0 && (
-                <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-700">
+                <span className="shrink-0 rounded-full border border-red-800 bg-red-950/60 px-3 py-1 text-xs font-medium text-red-300">
                   {analytics.expiring_items.length} at risk
                 </span>
               )}
             </div>
 
-            <div className="mt-5 overflow-hidden rounded-xl border border-slate-200">
+            <div className="mt-5 overflow-hidden rounded-xl border border-slate-700">
               {analytics.expiring_items.length === 0 ? (
-                <div className="p-5 text-sm text-slate-500">
+                <div className="bg-slate-950 p-5 text-sm text-slate-400">
                   No inventory is approaching expiry.
                 </div>
               ) : (
-                <div className="divide-y divide-slate-200">
+                <div className="divide-y divide-slate-800">
                   {analytics.expiring_items.map((item) => (
                     <div
                       key={`${item.item_id}-${item.lot_number}-${item.expiry_date}`}
-                      className="p-4"
+                      className="bg-slate-950 p-4"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-slate-900">
+                          <p className="truncate text-sm font-medium text-white">
                             {item.name}
                           </p>
 
@@ -478,7 +466,7 @@ export default function AnalyticsPage() {
                         </div>
 
                         <div className="shrink-0 text-right">
-                          <p className="text-sm font-semibold text-red-700">
+                          <p className="text-sm font-semibold text-red-300">
                             {item.days_until_expiry === 0
                               ? "Expires today"
                               : `${item.days_until_expiry} day${
@@ -497,7 +485,7 @@ export default function AnalyticsPage() {
                           Quantity at risk
                         </span>
 
-                        <span className="font-semibold text-slate-900">
+                        <span className="font-semibold text-white">
                           {formatNumber(item.quantity)} units
                         </span>
                       </div>

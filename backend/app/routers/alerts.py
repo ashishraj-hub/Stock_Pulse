@@ -7,6 +7,9 @@ from app.core.dependencies import get_current_user
 from app.db.dependencies import get_db
 from app.models.user import User
 from app.schemas.alerts import AlertResponse
+from app.services.alert_notifications import (
+    dispatch_alert_notifications,
+)
 from app.services.alerts import get_inventory_alerts
 
 
@@ -29,6 +32,7 @@ def get_alerts(
     Return the current inventory alerts for the organization.
 
     Alerts are calculated from live inventory and batch data.
+    New alerts may also trigger configured notifications.
     """
 
     if current_user.organization_id != organization_id:
@@ -39,7 +43,21 @@ def get_alerts(
             ),
         )
 
-    return get_inventory_alerts(
+    alerts = get_inventory_alerts(
         db,
         organization_id=organization_id,
     )
+
+    try:
+        dispatch_alert_notifications(
+            db,
+            organization_id=organization_id,
+            alerts=alerts,
+            email_recipient=current_user.email,
+        )
+    except Exception:
+        # Notification delivery must never break
+        # the existing Alert Center.
+        db.rollback()
+
+    return alerts

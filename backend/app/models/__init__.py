@@ -9,6 +9,7 @@ from app.models.audit_log import AuditLog
 from app.models.supplier import Supplier
 from app.models.purchase_order import PurchaseOrder, PurchaseOrderStatus
 from app.models.purchase_order_item import PurchaseOrderItem
+from app.models.notification_event import NotificationEvent
 
 __all__ = [
     "Organization",
@@ -25,4 +26,5 @@ __all__ = [
     "PurchaseOrder",
     "PurchaseOrderStatus",
     "PurchaseOrderItem",
+    "NotificationEvent",
 ]

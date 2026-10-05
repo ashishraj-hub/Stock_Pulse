@@ -29,57 +29,37 @@ import {
 
 export default function DashboardPage() {
   const [user, setUser] = useState<CurrentUser | null>(null);
-
-  const [summary, setSummary] =
-    useState<DashboardSummary | null>(null);
-
-  const [lowStockItems, setLowStockItems] =
-    useState<LowStockItem[]>([]);
-
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [lowStockItems, setLowStockItems] = useState<LowStockItem[]>([]);
   const [selectedSuggestion, setSelectedSuggestion] =
     useState<ReorderSuggestion | null>(null);
-
-  const [suggestionLoading, setSuggestionLoading] =
-    useState(false);
-
-  const [suggestionError, setSuggestionError] =
-    useState("");
-
+  const [suggestionLoading, setSuggestionLoading] = useState(false);
+  const [suggestionError, setSuggestionError] = useState("");
   const [procurement, setProcurement] =
     useState<ProcurementSummary | null>(null);
-
-  const [procurementError, setProcurementError] =
-    useState("");
-
+  const [procurementError, setProcurementError] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
     async function loadDashboard() {
       try {
         const currentUser = await getCurrentUser();
-
         setUser(currentUser);
 
-        const dashboard =
-          await getDashboardSummary(
-            currentUser.organization_id,
-          );
-
+        const dashboard = await getDashboardSummary(
+          currentUser.organization_id,
+        );
         setSummary(dashboard);
 
-        const lowStock =
-          await getLowStockItems(
-            currentUser.organization_id,
-          );
-
+        const lowStock = await getLowStockItems(
+          currentUser.organization_id,
+        );
         setLowStockItems(lowStock);
 
         try {
-          const procurementSummary =
-            await getProcurementSummary(
-              currentUser.organization_id,
-            );
-
+          const procurementSummary = await getProcurementSummary(
+            currentUser.organization_id,
+          );
           setProcurement(procurementSummary);
         } catch (err) {
           setProcurementError(
@@ -100,9 +80,7 @@ export default function DashboardPage() {
     loadDashboard();
   }, []);
 
-  async function handleReorderSuggestion(
-    itemId: string,
-  ) {
+  async function handleReorderSuggestion(itemId: string) {
     try {
       setSuggestionLoading(true);
       setSuggestionError("");
@@ -112,11 +90,10 @@ export default function DashboardPage() {
         throw new Error("User session not available");
       }
 
-      const suggestion =
-        await getReorderSuggestion(
-          user.organization_id,
-          itemId,
-        );
+      const suggestion = await getReorderSuggestion(
+        user.organization_id,
+        itemId,
+      );
 
       setSelectedSuggestion(suggestion);
     } catch (err) {
@@ -132,266 +109,271 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen p-8">
-        <h1 className="text-2xl font-bold">
-          StockPulse
-        </h1>
-
-        <p className="mt-4 text-red-600">
-          {error}
-        </p>
+      <main className="min-h-screen bg-slate-950 p-6 text-slate-100 sm:p-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="rounded-2xl border border-red-500/40 bg-red-950/40 p-6">
+            <h1 className="text-2xl font-bold text-white">
+              Dashboard
+            </h1>
+            <p className="mt-3 text-red-200">{error}</p>
+          </div>
+        </div>
       </main>
     );
   }
 
   if (!user || !summary) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <p>Loading dashboard...</p>
+      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200">
+        <div className="rounded-2xl border border-slate-700 bg-slate-900 px-6 py-5 shadow-xl">
+          <p className="font-medium">Loading dashboard...</p>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen p-8">
-      <div className="mx-auto max-w-6xl">
-
+    <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">
-            StockPulse
-          </h1>
+        <header className="mb-8 rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-xl">
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-400">
+                StockPulse
+              </p>
 
-          <p className="mt-2 text-gray-600">
-            Welcome, {user.name}
-          </p>
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                Inventory Dashboard
+              </h1>
 
-          <p className="text-sm text-gray-500">
-            Role: {user.role}
-          </p>
-        </div>
+              <p className="mt-2 text-slate-300">
+                Welcome back,{" "}
+                <span className="font-semibold text-white">
+                  {user.name}
+                </span>
+                .
+              </p>
+            </div>
 
-        {/* Dashboard summary cards */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <DashboardCard
-            title="Total Items"
-            value={summary.total_items}
-          />
+            <div className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Current role
+              </p>
+              <p className="mt-1 font-bold text-cyan-300">
+                {user.role}
+              </p>
+            </div>
+          </div>
+        </header>
 
-          <DashboardCard
-            title="Available Units"
-            value={summary.total_available_units}
-          />
-
-          <DashboardCard
-            title="Low Stock"
-            value={summary.low_stock_count}
-          />
-
-          <DashboardCard
-            title="Out of Stock"
-            value={summary.out_of_stock_count}
-          />
-
-          <DashboardCard
-            title="Pending Reorders"
-            value={summary.pending_reorder_count}
-          />
-        </div>
-
-        {/* Procurement Summary */}
-        <div className="mt-8">
+        {/* KPI cards */}
+        <section aria-label="Inventory overview">
           <div className="mb-4">
-            <h2 className="text-2xl font-bold">
+            <h2 className="text-xl font-bold text-white">
+              Inventory Overview
+            </h2>
+            <p className="mt-1 text-sm text-slate-400">
+              Current inventory health across your organization.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <DashboardCard
+              title="Total Items"
+              value={summary.total_items}
+              accent="cyan"
+            />
+
+            <DashboardCard
+              title="Available Units"
+              value={summary.total_available_units}
+              accent="blue"
+            />
+
+            <DashboardCard
+              title="Low Stock"
+              value={summary.low_stock_count}
+              accent="amber"
+            />
+
+            <DashboardCard
+              title="Out of Stock"
+              value={summary.out_of_stock_count}
+              accent="red"
+            />
+
+            <DashboardCard
+              title="Pending Reorders"
+              value={summary.pending_reorder_count}
+              accent="violet"
+            />
+          </div>
+        </section>
+
+        {/* Procurement */}
+        <section className="mt-10">
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-white">
               Procurement Summary
             </h2>
-
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-slate-400">
               Current purchase order status across your organization.
             </p>
           </div>
 
           {procurementError ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
-              <p className="text-sm text-red-700">
+            <div className="rounded-xl border border-red-500/40 bg-red-950/40 p-5">
+              <p className="text-sm font-medium text-red-200">
                 {procurementError}
               </p>
             </div>
           ) : !procurement ? (
-            <div className="rounded-xl border bg-white p-6 shadow-sm">
-              <p className="text-sm text-gray-500">
+            <div className="rounded-xl border border-slate-700 bg-slate-900 p-6">
+              <p className="text-sm text-slate-400">
                 Loading procurement summary...
               </p>
             </div>
           ) : (
             <>
-              {/* Total purchase orders */}
-              <div className="mb-4">
-                <div className="rounded-xl border bg-white p-5 shadow-sm">
-                  <p className="text-sm text-gray-500">
-                    Total Purchase Orders
-                  </p>
+              <div className="mb-4 rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-lg">
+                <p className="text-sm font-medium text-slate-400">
+                  Total Purchase Orders
+                </p>
 
-                  <p className="mt-2 text-3xl font-bold">
-                    {procurement.total}
-                  </p>
-                </div>
+                <p className="mt-2 text-4xl font-bold text-white">
+                  {procurement.total}
+                </p>
               </div>
 
-              {/* Procurement status cards */}
               <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-
-                <ProcurementCard
-                  title="Draft"
-                  value={procurement.draft}
-                />
-
+                <ProcurementCard title="Draft" value={procurement.draft} />
                 <ProcurementCard
                   title="Pending Approval"
                   value={procurement.pending_approval}
                 />
-
                 <ProcurementCard
                   title="Approved"
                   value={procurement.approved}
                 />
-
                 <ProcurementCard
                   title="Ordered"
                   value={procurement.ordered}
                 />
-
                 <ProcurementCard
                   title="Received"
                   value={procurement.received}
                 />
-
                 <ProcurementCard
                   title="Cancelled"
                   value={procurement.cancelled}
                 />
-
               </div>
             </>
           )}
-        </div>
+        </section>
 
-        {/* Low stock items */}
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold">
-            Low Stock Items
-          </h2>
-
-          <p className="mt-1 text-sm text-gray-500">
-            Items that have reached or fallen below
-            their reorder point.
-          </p>
+        {/* Low stock */}
+        <section className="mt-10">
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-white">
+              Low Stock Items
+            </h2>
+            <p className="mt-1 text-sm text-slate-400">
+              Items that have reached or fallen below their reorder point.
+            </p>
+          </div>
 
           {lowStockItems.length === 0 ? (
-            <p className="mt-4 text-gray-500">
-              No low-stock items.
-            </p>
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/30 p-6">
+              <p className="font-semibold text-emerald-200">
+                Inventory looks healthy.
+              </p>
+              <p className="mt-1 text-sm text-emerald-300/80">
+                No items are currently below their reorder point.
+              </p>
+            </div>
           ) : (
-            <div className="mt-4 overflow-x-auto rounded-xl border bg-white shadow-sm">
-              <table className="min-w-full text-left text-sm">
-                <thead className="border-b bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 font-semibold">
-                      Item
-                    </th>
-
-                    <th className="px-4 py-3 font-semibold">
-                      SKU
-                    </th>
-
-                    <th className="px-4 py-3 font-semibold">
-                      Available
-                    </th>
-
-                    <th className="px-4 py-3 font-semibold">
-                      Reorder Point
-                    </th>
-
-                    <th className="px-4 py-3 font-semibold">
-                      Shortage
-                    </th>
-
-                    <th className="px-4 py-3 font-semibold">
-                      Configured Order
-                    </th>
-
-                    <th className="px-4 py-3 font-semibold">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {lowStockItems.map((item) => (
-                    <tr
-                      key={item.item_id}
-                      className="border-b last:border-b-0"
-                    >
-                      <td className="px-4 py-3 font-medium">
-                        {item.name}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        {item.sku}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <span
-                          className={
-                            item.available_quantity === 0
-                              ? "font-semibold text-red-600"
-                              : "font-semibold text-amber-600"
-                          }
-                        >
-                          {item.available_quantity}
-                        </span>
-                      </td>
-
-                      <td className="px-4 py-3">
-                        {item.reorder_point}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        {item.shortage_quantity}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        {item.reorder_quantity}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleReorderSuggestion(
-                              item.item_id,
-                            )
-                          }
-                          disabled={suggestionLoading}
-                          className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {suggestionLoading
-                            ? "Loading..."
-                            : "Get Suggestion"}
-                        </button>
-                      </td>
+            <div className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-xl">
+              <div className="overflow-x-auto">
+                <table className="min-w-[900px] w-full text-left text-sm">
+                  <thead className="border-b border-slate-700 bg-slate-950">
+                    <tr>
+                      <TableHeader>Item</TableHeader>
+                      <TableHeader>SKU</TableHeader>
+                      <TableHeader>Available</TableHeader>
+                      <TableHeader>Reorder Point</TableHeader>
+                      <TableHeader>Shortage</TableHeader>
+                      <TableHeader>Configured Order</TableHeader>
+                      <TableHeader>Action</TableHeader>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+
+                  <tbody className="divide-y divide-slate-800">
+                    {lowStockItems.map((item) => (
+                      <tr
+                        key={item.item_id}
+                        className="transition hover:bg-slate-800/60"
+                      >
+                        <td className="px-4 py-4 font-semibold text-white">
+                          {item.name}
+                        </td>
+
+                        <td className="px-4 py-4 font-mono text-slate-300">
+                          {item.sku}
+                        </td>
+
+                        <td className="px-4 py-4">
+                          <span
+                            className={
+                              item.available_quantity === 0
+                                ? "rounded-full bg-red-950 px-3 py-1 font-bold text-red-300"
+                                : "rounded-full bg-amber-950 px-3 py-1 font-bold text-amber-300"
+                            }
+                          >
+                            {item.available_quantity}
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-4 text-slate-300">
+                          {item.reorder_point}
+                        </td>
+
+                        <td className="px-4 py-4 font-semibold text-amber-300">
+                          {item.shortage_quantity}
+                        </td>
+
+                        <td className="px-4 py-4 text-slate-300">
+                          {item.reorder_quantity}
+                        </td>
+
+                        <td className="px-4 py-4">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleReorderSuggestion(item.item_id)
+                            }
+                            disabled={suggestionLoading}
+                            className="rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs font-bold text-cyan-300 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {suggestionLoading
+                              ? "Loading..."
+                              : "Get Suggestion"}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Reorder suggestion error */}
+        {/* Suggestion error */}
         {suggestionError && (
-          <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4">
-            <p className="text-sm text-red-700">
+          <div className="mt-6 rounded-xl border border-red-500/40 bg-red-950/40 p-5">
+            <p className="text-sm font-medium text-red-200">
               {suggestionError}
             </p>
           </div>
@@ -399,17 +381,20 @@ export default function DashboardPage() {
 
         {/* Reorder suggestion */}
         {selectedSuggestion && (
-          <div className="mt-8 rounded-xl border border-blue-200 bg-blue-50 p-6">
-            <div className="flex items-start justify-between gap-4">
+          <section className="mt-10 rounded-2xl border border-cyan-500/30 bg-cyan-950/20 p-6 shadow-xl">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
               <div>
-                <h2 className="text-xl font-bold">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-400">
+                  Intelligence
+                </p>
+
+                <h2 className="mt-2 text-2xl font-bold text-white">
                   Reorder Suggestion
                 </h2>
 
-                <p className="mt-1 text-sm text-gray-600">
-                  Backend-generated reorder recommendation
-                  for{" "}
-                  <span className="font-semibold">
+                <p className="mt-2 text-sm text-slate-300">
+                  Backend-generated reorder recommendation for{" "}
+                  <span className="font-semibold text-white">
                     {selectedSuggestion.name}
                   </span>
                   .
@@ -418,18 +403,14 @@ export default function DashboardPage() {
 
               <button
                 type="button"
-                onClick={() =>
-                  setSelectedSuggestion(null)
-                }
-                className="text-sm font-medium text-gray-500 hover:text-gray-800"
+                onClick={() => setSelectedSuggestion(null)}
+                className="rounded-lg border border-slate-600 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-slate-800"
               >
                 Close
               </button>
             </div>
 
-            {/* Suggestion details */}
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-
               <SuggestionCard
                 label="SKU"
                 value={selectedSuggestion.sku}
@@ -437,23 +418,17 @@ export default function DashboardPage() {
 
               <SuggestionCard
                 label="Available"
-                value={
-                  selectedSuggestion.available_quantity
-                }
+                value={selectedSuggestion.available_quantity}
               />
 
               <SuggestionCard
                 label="Reorder Point"
-                value={
-                  selectedSuggestion.reorder_point
-                }
+                value={selectedSuggestion.reorder_point}
               />
 
               <SuggestionCard
                 label="Suggested Quantity"
-                value={
-                  selectedSuggestion.suggested_quantity
-                }
+                value={selectedSuggestion.suggested_quantity}
                 highlight
               />
 
@@ -461,22 +436,20 @@ export default function DashboardPage() {
                 label="Lead Time"
                 value={`${selectedSuggestion.lead_time_days} days`}
               />
-
             </div>
 
-            {/* Recommendation message */}
-            <div className="mt-6 rounded-lg border border-blue-200 bg-white p-4">
-              <p className="text-sm text-gray-500">
+            <div className="mt-6 rounded-xl border border-slate-700 bg-slate-950 p-5">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
                 Recommendation
               </p>
 
-              <p className="mt-1 font-semibold text-gray-900">
+              <p className="mt-2 text-lg font-bold text-white">
                 {selectedSuggestion.is_low_stock
                   ? `Reorder ${selectedSuggestion.suggested_quantity} units.`
                   : "No reorder is currently required."}
               </p>
             </div>
-          </div>
+          </section>
         )}
       </div>
     </main>
@@ -486,19 +459,31 @@ export default function DashboardPage() {
 interface DashboardCardProps {
   title: string;
   value: number;
+  accent: "cyan" | "blue" | "amber" | "red" | "violet";
 }
 
 function DashboardCard({
   title,
   value,
+  accent,
 }: DashboardCardProps) {
+  const accentClasses = {
+    cyan: "border-cyan-500/30 text-cyan-300",
+    blue: "border-blue-500/30 text-blue-300",
+    amber: "border-amber-500/30 text-amber-300",
+    red: "border-red-500/30 text-red-300",
+    violet: "border-violet-500/30 text-violet-300",
+  };
+
   return (
-    <div className="rounded-xl border bg-white p-5 shadow-sm">
-      <p className="text-sm text-gray-500">
+    <div
+      className={`rounded-2xl border bg-slate-900 p-5 shadow-lg ${accentClasses[accent]}`}
+    >
+      <p className="text-sm font-semibold text-slate-400">
         {title}
       </p>
 
-      <p className="mt-2 text-3xl font-bold">
+      <p className="mt-3 text-4xl font-black text-white">
         {value}
       </p>
     </div>
@@ -515,12 +500,12 @@ function ProcurementCard({
   value,
 }: ProcurementCardProps) {
   return (
-    <div className="rounded-xl border bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    <div className="rounded-xl border border-slate-700 bg-slate-900 p-4 shadow-lg">
+      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
         {title}
       </p>
 
-      <p className="mt-2 text-2xl font-bold text-gray-900">
+      <p className="mt-2 text-2xl font-black text-white">
         {value}
       </p>
     </div>
@@ -539,20 +524,32 @@ function SuggestionCard({
   highlight = false,
 }: SuggestionCardProps) {
   return (
-    <div className="rounded-lg border bg-white p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    <div className="rounded-xl border border-slate-700 bg-slate-900 p-4">
+      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
         {label}
       </p>
 
       <p
         className={
           highlight
-            ? "mt-2 text-2xl font-bold text-blue-700"
-            : "mt-2 text-xl font-bold text-gray-900"
+            ? "mt-2 text-3xl font-black text-cyan-300"
+            : "mt-2 text-xl font-bold text-white"
         }
       >
         {value}
       </p>
     </div>
+  );
+}
+
+function TableHeader({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide text-slate-400">
+      {children}
+    </th>
   );
 }

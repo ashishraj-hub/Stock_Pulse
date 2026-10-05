@@ -132,6 +132,11 @@ const navigationSections: NavigationSection[] = [
         icon: BarChart3,
       },
       {
+        label: "Expiry Management",
+        href: "/expiry",
+        icon: ClipboardList,
+      },
+      {
         label: "Cost Analysis",
         href: "/cost-analysis",
         icon: Wallet,

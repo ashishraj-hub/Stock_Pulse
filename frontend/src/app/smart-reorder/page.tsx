@@ -1,8 +1,28 @@
 "use client";
 
-import { Suspense,useEffect, useMemo, useState } from "react";
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowRight,
+  BarChart3,
+  Boxes,
+  CheckCircle2,
+  Clock3,
+  Loader2,
+  PackageCheck,
+  RefreshCw,
+  ShoppingCart,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
 
 import { getCurrentUser, type CurrentUser } from "../lib/auth";
 
@@ -59,9 +79,9 @@ function SmartReorderContent() {
   const [currentUser, setCurrentUser] =
     useState<CurrentUser | null>(null);
 
-  const [inventory, setInventory] = useState<InventoryListItem[]>(
-    [],
-  );
+  const [inventory, setInventory] = useState<
+    InventoryListItem[]
+  >([]);
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
@@ -72,7 +92,8 @@ function SmartReorderContent() {
 
   const [historyDays, setHistoryDays] = useState("30");
   const [forecastDays, setForecastDays] = useState("7");
-  const [safetyStockDays, setSafetyStockDays] = useState("3");
+  const [safetyStockDays, setSafetyStockDays] =
+    useState("3");
 
   const [recommendation, setRecommendation] =
     useState<SmartReorderResponse | null>(null);
@@ -92,7 +113,7 @@ function SmartReorderContent() {
   const [loading, setLoading] = useState(true);
   const [calculating, setCalculating] = useState(false);
   const [autoCalculate, setAutoCalculate] = useState(
-  Boolean(itemIdFromUrl),
+    Boolean(itemIdFromUrl),
   );
   const [creatingPurchaseOrder, setCreatingPurchaseOrder] =
     useState(false);
@@ -132,8 +153,6 @@ function SmartReorderContent() {
     loadInitialData();
   }, []);
 
-  // When Reorder Center opens this page with ?itemId=...,
-  // automatically select that item after inventory has loaded.
   useEffect(() => {
     if (!itemIdFromUrl) {
       return;
@@ -152,38 +171,37 @@ function SmartReorderContent() {
     }
   }, [itemIdFromUrl, inventory]);
 
-
   useEffect(() => {
     if (!autoCalculate) {
-        return;
-      }
+      return;
+    }
 
-      if (!itemIdFromUrl) {
-        return;
-      }
+    if (!itemIdFromUrl) {
+      return;
+    }
 
-      if (!selectedItemId) {
-        return;
-      }
+    if (!selectedItemId) {
+      return;
+    }
 
-      if (selectedItemId !== itemIdFromUrl) {
-        return;
-      }
+    if (selectedItemId !== itemIdFromUrl) {
+      return;
+    }
 
-      if (loading || calculating) {
-        return;
-      }
+    if (loading || calculating) {
+      return;
+    }
 
-      setAutoCalculate(false);
+    setAutoCalculate(false);
 
-      void handleCalculate();
-    }, [
-      autoCalculate,
-      itemIdFromUrl,
-      selectedItemId,
-      loading,
-      calculating,
-    ]);
+    void handleCalculate();
+  }, [
+    autoCalculate,
+    itemIdFromUrl,
+    selectedItemId,
+    loading,
+    calculating,
+  ]);
 
   const itemOptions = useMemo(() => {
     const uniqueItems = new Map<
@@ -200,7 +218,8 @@ function SmartReorderContent() {
       const existing = uniqueItems.get(row.item_id);
 
       if (existing) {
-        existing.available_quantity += row.available_quantity;
+        existing.available_quantity +=
+          row.available_quantity;
       } else {
         uniqueItems.set(row.item_id, {
           item_id: row.item_id,
@@ -309,9 +328,10 @@ function SmartReorderContent() {
       setUsageHistory(usageHistoryResult);
       setForecast(forecastResult);
 
-      // Smart recommendation becomes the default PO quantity.
       setPoQuantity(
-        String(recommendationResult.recommended_quantity),
+        String(
+          recommendationResult.recommended_quantity,
+        ),
       );
 
       setSuccess(
@@ -360,18 +380,21 @@ function SmartReorderContent() {
       setSuccess("");
       setCreatedPurchaseOrderId("");
 
-      const result = await createSmartReorderPurchaseOrder(
-        currentUser?.organization_id ?? ORGANIZATION_ID,
-        recommendation.item_id,
-        {
-          item_id: recommendation.item_id,
-          supplier_id: selectedSupplierId,
-          quantity: parsedQuantity,
-          notes: poNotes.trim() || undefined,
-        },
-      );
+      const result =
+        await createSmartReorderPurchaseOrder(
+          currentUser?.organization_id ?? ORGANIZATION_ID,
+          recommendation.item_id,
+          {
+            item_id: recommendation.item_id,
+            supplier_id: selectedSupplierId,
+            quantity: parsedQuantity,
+            notes: poNotes.trim() || undefined,
+          },
+        );
 
-      setCreatedPurchaseOrderId(result.purchase_order_id);
+      setCreatedPurchaseOrderId(
+        result.purchase_order_id,
+      );
 
       setSuccess(
         `Purchase order created successfully. Quantity: ${result.quantity} units.`,
@@ -400,23 +423,20 @@ function SmartReorderContent() {
 
   const maxForecastQuantity = useMemo(() => {
     return Math.max(
-      ...(
-        forecast?.forecast.map(
-          (point) => point.predicted_quantity,
-        ) ?? []
-      ),
+      ...(forecast?.forecast.map(
+        (point) => point.predicted_quantity,
+      ) ?? []),
       1,
     );
   }, [forecast]);
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-50 p-6">
-        <div className="mx-auto max-w-7xl">
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <p className="text-sm text-slate-600">
-              Loading Smart Reorder...
-            </p>
+      <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-center py-32">
+          <div className="flex items-center gap-3 text-slate-300">
+            <Loader2 className="h-5 w-5 animate-spin text-cyan-400" />
+            Loading Smart Reorder...
           </div>
         </div>
       </main>
@@ -424,68 +444,110 @@ function SmartReorderContent() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 p-6">
+    <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-sm font-medium text-blue-600">
-              StockPulse Intelligence
-            </p>
+        <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-xl">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-cyan-400">
+                <Sparkles className="h-4 w-4" />
+                StockPulse Intelligence
+              </div>
 
-            <h1 className="mt-1 text-3xl font-bold text-slate-900">
-              Smart Reorder
-            </h1>
+              <h1 className="text-3xl font-bold tracking-tight text-white">
+                Smart Reorder
+              </h1>
 
-            <p className="mt-2 max-w-2xl text-sm text-slate-600">
-              Use historical stock usage and forecasting to
-              calculate a demand-based reorder recommendation.
-            </p>
+              <p className="mt-2 max-w-2xl text-sm text-slate-400">
+                Use historical stock usage and demand
+                forecasting to calculate a data-driven
+                reorder recommendation.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/reorder-center"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                Reorder Center
+              </Link>
+
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-400"
+              >
+                Dashboard
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
+        </section>
 
-          <Link
-            href="/dashboard"
-            className="inline-flex w-fit items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-100"
-          >
-            Back to Dashboard
-          </Link>
-        </div>
-
-        {/* Error */}
+        {/* Alerts */}
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
+          <section className="rounded-2xl border border-red-500/30 bg-red-950/40 px-5 py-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
+
+              <div>
+                <p className="font-semibold text-red-300">
+                  Smart Reorder error
+                </p>
+
+                <p className="mt-1 text-sm text-red-200">
+                  {error}
+                </p>
+              </div>
+            </div>
+          </section>
         )}
 
-        {/* Success */}
         {success && (
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            {success}
-          </div>
+          <section className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 px-5 py-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
+
+              <div>
+                <p className="font-semibold text-emerald-300">
+                  Operation successful
+                </p>
+
+                <p className="mt-1 text-sm text-emerald-200">
+                  {success}
+                </p>
+              </div>
+            </div>
+          </section>
         )}
 
-        {/* Forecast configuration */}
-        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-5">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Forecast Configuration
-            </h2>
+        {/* Configuration */}
+        <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-xl">
+          <div className="mb-6 flex items-start gap-3">
+            <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/40 p-3">
+              <BarChart3 className="h-5 w-5 text-cyan-400" />
+            </div>
 
-            <p className="mt-1 text-sm text-slate-500">
-              Select an item and configure the forecasting window.
-            </p>
+            <div>
+              <h2 className="text-lg font-bold text-white">
+                Forecast Configuration
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Select an item and configure the forecasting
+                window used by the recommendation engine.
+              </p>
+            </div>
           </div>
 
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-            {/* Item */}
             <div className="lg:col-span-2">
-              <label
+              <DarkLabel
                 htmlFor="item"
-                className="mb-2 block text-sm font-medium text-slate-700"
-              >
-                Item
-              </label>
+                text="Item"
+              />
 
               <select
                 id="item"
@@ -503,7 +565,7 @@ function SmartReorderContent() {
                   setSuccess("");
                   setError("");
                 }}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className={inputClassName}
               >
                 <option value="">Select an item</option>
 
@@ -519,23 +581,20 @@ function SmartReorderContent() {
 
               {selectedItem && (
                 <p className="mt-2 text-xs text-slate-500">
-                  Current frontend inventory:{" "}
-                  <span className="font-semibold text-slate-700">
+                  Current available inventory:{" "}
+                  <span className="font-bold text-cyan-300">
                     {selectedItem.available_quantity}
                   </span>{" "}
-                  available units.
+                  units
                 </p>
               )}
             </div>
 
-            {/* History */}
             <div>
-              <label
+              <DarkLabel
                 htmlFor="history-days"
-                className="mb-2 block text-sm font-medium text-slate-700"
-              >
-                History Days
-              </label>
+                text="History Days"
+              />
 
               <input
                 id="history-days"
@@ -546,18 +605,19 @@ function SmartReorderContent() {
                 onChange={(event) =>
                   setHistoryDays(event.target.value)
                 }
-                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className={inputClassName}
               />
+
+              <p className="mt-2 text-xs text-slate-500">
+                3–365 days
+              </p>
             </div>
 
-            {/* Forecast */}
             <div>
-              <label
+              <DarkLabel
                 htmlFor="forecast-days"
-                className="mb-2 block text-sm font-medium text-slate-700"
-              >
-                Forecast Days
-              </label>
+                text="Forecast Days"
+              />
 
               <input
                 id="forecast-days"
@@ -568,18 +628,19 @@ function SmartReorderContent() {
                 onChange={(event) =>
                   setForecastDays(event.target.value)
                 }
-                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className={inputClassName}
               />
+
+              <p className="mt-2 text-xs text-slate-500">
+                1–90 days
+              </p>
             </div>
 
-            {/* Safety stock */}
             <div>
-              <label
+              <DarkLabel
                 htmlFor="safety-stock-days"
-                className="mb-2 block text-sm font-medium text-slate-700"
-              >
-                Safety Stock Days
-              </label>
+                text="Safety Stock Days"
+              />
 
               <input
                 id="safety-stock-days"
@@ -590,21 +651,35 @@ function SmartReorderContent() {
                 onChange={(event) =>
                   setSafetyStockDays(event.target.value)
                 }
-                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className={inputClassName}
               />
+
+              <p className="mt-2 text-xs text-slate-500">
+                0–90 days
+              </p>
             </div>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 border-t border-slate-800 pt-5">
             <button
               type="button"
               onClick={handleCalculate}
-              disabled={calculating || !selectedItemId}
-              className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={
+                calculating || !selectedItemId
+              }
+              className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-5 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {calculating
-                ? "Analyzing..."
-                : "Calculate Smart Reorder"}
+              {calculating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <TrendingUp className="h-4 w-4" />
+                  Calculate Smart Reorder
+                </>
+              )}
             </button>
           </div>
         </section>
@@ -616,6 +691,10 @@ function SmartReorderContent() {
               <MetricCard
                 label="Available Stock"
                 value={recommendation.available_quantity}
+                icon={
+                  <Boxes className="h-5 w-5" />
+                }
+                accent="cyan"
               />
 
               <MetricCard
@@ -623,27 +702,45 @@ function SmartReorderContent() {
                 value={recommendation.predicted_daily_usage.toFixed(
                   2,
                 )}
+                icon={
+                  <TrendingUp className="h-5 w-5" />
+                }
+                accent="violet"
               />
 
               <MetricCard
                 label="Lead-Time Demand"
-                value={recommendation.lead_time_demand.toFixed(2)}
+                value={recommendation.lead_time_demand.toFixed(
+                  2,
+                )}
+                icon={
+                  <Clock3 className="h-5 w-5" />
+                }
+                accent="amber"
               />
 
               <MetricCard
                 label="Recommended Reorder"
                 value={recommendation.recommended_quantity}
+                icon={
+                  <PackageCheck className="h-5 w-5" />
+                }
+                accent="emerald"
                 highlight
               />
             </section>
 
-            {/* Historical Usage */}
-            <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            {/* Historical usage */}
+            <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-xl">
+              <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-900">
-                    Historical Usage
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-cyan-400" />
+
+                    <h2 className="text-xl font-bold text-white">
+                      Historical Usage
+                    </h2>
+                  </div>
 
                   <p className="mt-1 text-sm text-slate-500">
                     Actual daily stock issued during the selected
@@ -651,43 +748,43 @@ function SmartReorderContent() {
                   </p>
                 </div>
 
-                <div className="text-sm text-slate-500">
+                <div className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs font-semibold text-slate-400">
                   {usageHistory.length} days with usage data
                 </div>
               </div>
 
               {usageHistory.length === 0 ? (
-                <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-5">
-                  <p className="text-sm text-slate-600">
-                    No historical usage data was returned for
-                    this item.
-                  </p>
-                </div>
+                <EmptyState text="No historical usage data was returned for this item." />
               ) : (
                 <div className="mt-6 space-y-3">
                   {usageHistory.map((point) => {
                     const width =
-                      (point.quantity / maxUsageQuantity) * 100;
+                      (point.quantity /
+                        maxUsageQuantity) *
+                      100;
 
                     return (
                       <div
                         key={point.date}
-                        className="grid grid-cols-[90px_1fr_55px] items-center gap-3"
+                        className="grid grid-cols-[75px_1fr_50px] items-center gap-3"
                       >
                         <span className="text-xs font-medium text-slate-500">
                           {formatDate(point.date)}
                         </span>
 
-                        <div className="h-7 overflow-hidden rounded-md bg-slate-100">
+                        <div className="h-7 overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
                           <div
-                            className="h-full rounded-md bg-blue-500 transition-all"
+                            className="h-full rounded-lg bg-cyan-500/80 transition-all"
                             style={{
-                              width: `${Math.max(width, 2)}%`,
+                              width: `${Math.max(
+                                width,
+                                2,
+                              )}%`,
                             }}
                           />
                         </div>
 
-                        <span className="text-right text-sm font-semibold text-slate-800">
+                        <span className="text-right text-sm font-bold text-slate-300">
                           {point.quantity}
                         </span>
                       </div>
@@ -699,12 +796,16 @@ function SmartReorderContent() {
 
             {/* Forecast */}
             {forecast && (
-              <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-xl">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>
-                    <h2 className="text-xl font-semibold text-slate-900">
-                      Demand Forecast
-                    </h2>
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-emerald-400" />
+
+                      <h2 className="text-xl font-bold text-white">
+                        Demand Forecast
+                      </h2>
+                    </div>
 
                     <p className="mt-1 text-sm text-slate-500">
                       Forecasted daily usage for the next{" "}
@@ -713,30 +814,46 @@ function SmartReorderContent() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+                    <DarkBadge tone="cyan">
                       {forecast.method}
-                    </span>
+                    </DarkBadge>
 
-                    <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                    <DarkBadge tone="amber">
                       Confidence: {forecast.confidence}
-                    </span>
+                    </DarkBadge>
                   </div>
                 </div>
 
                 <div className="mt-6 grid gap-4 md:grid-cols-3">
                   <MetricCard
                     label="Historical Average"
-                    value={forecast.average_daily_usage.toFixed(2)}
+                    value={forecast.average_daily_usage.toFixed(
+                      2,
+                    )}
+                    icon={
+                      <BarChart3 className="h-5 w-5" />
+                    }
+                    accent="cyan"
                   />
 
                   <MetricCard
                     label="Predicted Daily Usage"
-                    value={forecast.predicted_daily_usage.toFixed(2)}
+                    value={forecast.predicted_daily_usage.toFixed(
+                      2,
+                    )}
+                    icon={
+                      <TrendingUp className="h-5 w-5" />
+                    }
+                    accent="violet"
                   />
 
                   <MetricCard
                     label="Forecast Horizon"
                     value={`${forecast.forecast_days} days`}
+                    icon={
+                      <Clock3 className="h-5 w-5" />
+                    }
+                    accent="amber"
                   />
                 </div>
 
@@ -750,23 +867,28 @@ function SmartReorderContent() {
                     return (
                       <div
                         key={point.date}
-                        className="grid grid-cols-[90px_1fr_70px] items-center gap-3"
+                        className="grid grid-cols-[75px_1fr_65px] items-center gap-3"
                       >
                         <span className="text-xs font-medium text-slate-500">
                           {formatDate(point.date)}
                         </span>
 
-                        <div className="h-7 overflow-hidden rounded-md bg-slate-100">
+                        <div className="h-7 overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
                           <div
-                            className="h-full rounded-md bg-emerald-500 transition-all"
+                            className="h-full rounded-lg bg-emerald-500/80 transition-all"
                             style={{
-                              width: `${Math.max(width, 2)}%`,
+                              width: `${Math.max(
+                                width,
+                                2,
+                              )}%`,
                             }}
                           />
                         </div>
 
-                        <span className="text-right text-sm font-semibold text-slate-800">
-                          {point.predicted_quantity.toFixed(2)}
+                        <span className="text-right text-sm font-bold text-slate-300">
+                          {point.predicted_quantity.toFixed(
+                            2,
+                          )}
                         </span>
                       </div>
                     );
@@ -775,11 +897,11 @@ function SmartReorderContent() {
               </section>
             )}
 
-            {/* Forecast details */}
-            <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            {/* Item details */}
+            <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-xl">
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-900">
+                  <h2 className="text-xl font-bold text-white">
                     {recommendation.name}
                   </h2>
 
@@ -789,14 +911,14 @@ function SmartReorderContent() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+                  <DarkBadge tone="cyan">
                     {recommendation.forecast_method}
-                  </span>
+                  </DarkBadge>
 
-                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                  <DarkBadge tone="amber">
                     Confidence:{" "}
                     {recommendation.forecast_confidence}
-                  </span>
+                  </DarkBadge>
                 </div>
               </div>
 
@@ -818,12 +940,16 @@ function SmartReorderContent() {
 
                 <DetailRow
                   label="Safety Stock"
-                  value={recommendation.safety_stock.toFixed(2)}
+                  value={recommendation.safety_stock.toFixed(
+                    2,
+                  )}
                 />
 
                 <DetailRow
                   label="Target Stock"
-                  value={recommendation.target_stock.toFixed(2)}
+                  value={recommendation.target_stock.toFixed(
+                    2,
+                  )}
                 />
 
                 <DetailRow
@@ -852,16 +978,28 @@ function SmartReorderContent() {
               </div>
             </section>
 
-            {/* Recommendation calculation breakdown */}
-            <section className="rounded-xl border border-blue-200 bg-blue-50 p-6">
-              <div>
-                <p className="text-sm font-medium text-blue-700">
-                  How StockPulse calculated this recommendation
-                </p>
+            {/* Calculation breakdown */}
+            <section className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-6 shadow-xl">
+              <div className="flex items-start gap-3">
+                <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/60 p-3">
+                  <BarChart3 className="h-5 w-5 text-cyan-400" />
+                </div>
 
-                <h2 className="mt-1 text-xl font-semibold text-blue-950">
-                  Demand-Based Reorder Calculation
-                </h2>
+                <div>
+                  <p className="text-sm font-semibold text-cyan-400">
+                    Calculation Engine
+                  </p>
+
+                  <h2 className="mt-1 text-xl font-bold text-white">
+                    Demand-Based Reorder Calculation
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    StockPulse combines predicted demand,
+                    lead time, safety stock, and available
+                    inventory.
+                  </p>
+                </div>
               </div>
 
               <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -889,43 +1027,36 @@ function SmartReorderContent() {
                 />
               </div>
 
-              <div className="mt-5 rounded-lg border border-blue-200 bg-white p-5">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-500">
-                      Current Available Stock
-                    </p>
+              <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-950 p-5">
+                <div className="grid gap-5 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:items-center">
+                  <CalculationValue
+                    label="Current Available Stock"
+                    value={`${recommendation.available_quantity} units`}
+                  />
 
-                    <p className="mt-1 text-2xl font-bold text-slate-900">
-                      {recommendation.available_quantity} units
-                    </p>
-                  </div>
-
-                  <div className="text-center text-2xl font-bold text-slate-400">
+                  <div className="hidden text-2xl font-bold text-slate-700 md:block">
                     −
                   </div>
 
-                  <div>
-                    <p className="text-sm font-medium text-slate-500">
-                      Target Stock
-                    </p>
+                  <CalculationValue
+                    label="Target Stock"
+                    value={`${recommendation.target_stock.toFixed(2)} units`}
+                  />
 
-                    <p className="mt-1 text-2xl font-bold text-slate-900">
-                      {recommendation.target_stock.toFixed(2)} units
-                    </p>
-                  </div>
-
-                  <div className="text-center text-2xl font-bold text-slate-400">
+                  <div className="hidden text-2xl font-bold text-slate-700 md:block">
                     =
                   </div>
 
-                  <div>
-                    <p className="text-sm font-medium text-blue-600">
+                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/30 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wide text-emerald-400">
                       Recommended Purchase
                     </p>
 
-                    <p className="mt-1 text-3xl font-bold text-blue-700">
-                      {recommendation.recommended_quantity} units
+                    <p className="mt-1 text-3xl font-black text-white">
+                      {recommendation.recommended_quantity}
+                      <span className="ml-1 text-sm font-semibold text-emerald-300">
+                        units
+                      </span>
                     </p>
                   </div>
                 </div>
@@ -933,35 +1064,46 @@ function SmartReorderContent() {
             </section>
 
             {/* Smart recommendation */}
-            <section className="rounded-xl border border-blue-200 bg-blue-50 p-6">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <section className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-6 shadow-xl">
+              <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-700">
+                  <div className="flex items-center gap-2 text-sm font-bold text-emerald-400">
+                    <Sparkles className="h-4 w-4" />
                     Smart Reorder Recommendation
+                  </div>
+
+                  <p className="mt-2 text-4xl font-black text-white">
+                    {recommendation.recommended_quantity}
+                    <span className="ml-2 text-lg font-semibold text-emerald-300">
+                      units
+                    </span>
                   </p>
 
-                  <p className="mt-1 text-3xl font-bold text-blue-900">
-                    {recommendation.recommended_quantity} units
-                  </p>
-
-                  <p className="mt-2 text-sm text-blue-800">
-                    Based on predicted demand, lead time, safety
-                    stock, and current available inventory.
+                  <p className="mt-2 max-w-xl text-sm text-slate-400">
+                    Based on predicted demand, lead time,
+                    safety stock, and current available
+                    inventory.
                   </p>
                 </div>
 
-                <div className="rounded-lg border border-blue-200 bg-white px-5 py-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                <div className="rounded-2xl border border-slate-700 bg-slate-950 px-5 py-4">
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
                     Low Stock Status
                   </p>
 
                   <p
-                    className={`mt-1 text-sm font-semibold ${
+                    className={`mt-2 flex items-center gap-2 text-sm font-bold ${
                       recommendation.is_low_stock
-                        ? "text-red-600"
-                        : "text-emerald-600"
+                        ? "text-red-400"
+                        : "text-emerald-400"
                     }`}
                   >
+                    {recommendation.is_low_stock ? (
+                      <AlertTriangle className="h-4 w-4" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4" />
+                    )}
+
                     {recommendation.is_low_stock
                       ? "Below reorder point"
                       : "Above reorder point"}
@@ -970,39 +1112,44 @@ function SmartReorderContent() {
               </div>
             </section>
 
-            {/* Create PO */}
-            <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="mb-5">
-                <h2 className="text-xl font-semibold text-slate-900">
-                  Create Purchase Order
-                </h2>
+            {/* Purchase order */}
+            <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-xl">
+              <div className="mb-6 flex items-start gap-3">
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-950/40 p-3">
+                  <ShoppingCart className="h-5 w-5 text-emerald-400" />
+                </div>
 
-                <p className="mt-1 text-sm text-slate-500">
-                  Convert the smart reorder recommendation into a
-                  draft purchase order.
-                </p>
+                <div>
+                  <h2 className="text-xl font-bold text-white">
+                    Create Purchase Order
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Convert the smart reorder recommendation
+                    into a draft purchase order.
+                  </p>
+                </div>
               </div>
 
               <div className="grid gap-5 md:grid-cols-2">
-                {/* Supplier */}
                 <div>
-                  <label
+                  <DarkLabel
                     htmlFor="supplier"
-                    className="mb-2 block text-sm font-medium text-slate-700"
-                  >
-                    Supplier
-                  </label>
+                    text="Supplier"
+                  />
 
                   <select
                     id="supplier"
                     value={selectedSupplierId}
                     onChange={(event) => {
-                      setSelectedSupplierId(event.target.value);
+                      setSelectedSupplierId(
+                        event.target.value,
+                      );
                       setCreatedPurchaseOrderId("");
                       setSuccess("");
                       setError("");
                     }}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    className={inputClassName}
                   >
                     <option value="">
                       Select supplier
@@ -1019,14 +1166,11 @@ function SmartReorderContent() {
                   </select>
                 </div>
 
-                {/* Quantity */}
                 <div>
-                  <label
+                  <DarkLabel
                     htmlFor="po-quantity"
-                    className="mb-2 block text-sm font-medium text-slate-700"
-                  >
-                    Purchase Quantity
-                  </label>
+                    text="Purchase Quantity"
+                  />
 
                   <input
                     id="po-quantity"
@@ -1034,26 +1178,25 @@ function SmartReorderContent() {
                     min="1"
                     value={poQuantity}
                     onChange={(event) => {
-                      setPoQuantity(event.target.value);
+                      setPoQuantity(
+                        event.target.value,
+                      );
                       setCreatedPurchaseOrderId("");
                     }}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    className={inputClassName}
                   />
 
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-2 text-xs text-slate-500">
                     Automatically populated from the smart
                     reorder recommendation.
                   </p>
                 </div>
 
-                {/* Notes */}
                 <div className="md:col-span-2">
-                  <label
+                  <DarkLabel
                     htmlFor="po-notes"
-                    className="mb-2 block text-sm font-medium text-slate-700"
-                  >
-                    Notes
-                  </label>
+                    text="Notes"
+                  />
 
                   <textarea
                     id="po-notes"
@@ -1063,12 +1206,12 @@ function SmartReorderContent() {
                       setPoNotes(event.target.value)
                     }
                     placeholder="Optional purchase order notes..."
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    className={`${inputClassName} resize-y`}
                   />
                 </div>
               </div>
 
-              <div className="mt-6 flex flex-wrap items-center gap-3">
+              <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-slate-800 pt-5">
                 <button
                   type="button"
                   onClick={handleCreatePurchaseOrder}
@@ -1077,33 +1220,48 @@ function SmartReorderContent() {
                     !selectedSupplierId ||
                     !poQuantity
                   }
-                  className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {creatingPurchaseOrder
-                    ? "Creating Purchase Order..."
-                    : "Create Purchase Order"}
+                  {creatingPurchaseOrder ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Creating Purchase Order...
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="h-4 w-4" />
+                      Create Purchase Order
+                    </>
+                  )}
                 </button>
 
                 {createdPurchaseOrderId && (
                   <Link
                     href="/purchase-orders"
-                    className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950 px-5 py-2.5 text-sm font-bold text-slate-300 transition hover:bg-slate-800 hover:text-white"
                   >
                     View Purchase Orders
+                    <ArrowRight className="h-4 w-4" />
                   </Link>
                 )}
               </div>
 
               {createdPurchaseOrderId && (
-                <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-                  <p className="text-sm font-semibold text-emerald-800">
-                    Draft purchase order created successfully.
-                  </p>
+                <div className="mt-5 rounded-2xl border border-emerald-500/30 bg-emerald-950/30 p-4">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
 
-                  <p className="mt-1 break-all text-xs text-emerald-700">
-                    Purchase Order ID:{" "}
-                    {createdPurchaseOrderId}
-                  </p>
+                    <div>
+                      <p className="text-sm font-bold text-emerald-300">
+                        Draft purchase order created successfully.
+                      </p>
+
+                      <p className="mt-1 break-all text-xs text-emerald-400/80">
+                        Purchase Order ID:{" "}
+                        {createdPurchaseOrderId}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </section>
@@ -1118,9 +1276,10 @@ export default function SmartReorderPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-slate-950 p-6 text-white">
+        <main className="min-h-screen bg-slate-950 px-4 py-6 text-white sm:px-6">
           <div className="mx-auto max-w-7xl">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+            <div className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-900 p-6 text-slate-300">
+              <Loader2 className="h-5 w-5 animate-spin text-cyan-400" />
               Loading Smart Reorder...
             </div>
           </div>
@@ -1132,34 +1291,89 @@ export default function SmartReorderPage() {
   );
 }
 
+const inputClassName =
+  "w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20";
+
+function DarkLabel({
+  htmlFor,
+  text,
+}: {
+  htmlFor: string;
+  text: string;
+}) {
+  return (
+    <label
+      htmlFor={htmlFor}
+      className="mb-2 block text-sm font-semibold text-slate-300"
+    >
+      {text}
+    </label>
+  );
+}
+
 function MetricCard({
   label,
   value,
+  icon,
+  accent,
   highlight = false,
 }: {
   label: string;
   value: number | string;
+  icon: React.ReactNode;
+  accent: "cyan" | "violet" | "amber" | "emerald";
   highlight?: boolean;
 }) {
+  const styles = {
+    cyan: {
+      border: "border-cyan-500/20",
+      bg: "bg-cyan-950/30",
+      icon: "text-cyan-400",
+    },
+    violet: {
+      border: "border-violet-500/20",
+      bg: "bg-violet-950/30",
+      icon: "text-violet-400",
+    },
+    amber: {
+      border: "border-amber-500/20",
+      bg: "bg-amber-950/30",
+      icon: "text-amber-400",
+    },
+    emerald: {
+      border: "border-emerald-500/20",
+      bg: "bg-emerald-950/30",
+      icon: "text-emerald-400",
+    },
+  };
+
+  const style = styles[accent];
+
   return (
     <div
-      className={`rounded-xl border p-5 shadow-sm ${
+      className={`rounded-2xl border bg-slate-900 p-5 shadow-lg ${
         highlight
-          ? "border-blue-200 bg-blue-50"
-          : "border-slate-200 bg-white"
+          ? "border-emerald-500/40"
+          : "border-slate-700"
       }`}
     >
-      <p className="text-sm font-medium text-slate-500">
-        {label}
-      </p>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-slate-500">
+            {label}
+          </p>
 
-      <p
-        className={`mt-2 text-2xl font-bold ${
-          highlight ? "text-blue-700" : "text-slate-900"
-        }`}
-      >
-        {value}
-      </p>
+          <p className="mt-2 text-2xl font-black text-white">
+            {value}
+          </p>
+        </div>
+
+        <div
+          className={`rounded-xl border p-3 ${style.border} ${style.bg} ${style.icon}`}
+        >
+          {icon}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1172,12 +1386,12 @@ function DetailRow({
   value: number | string;
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+    <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
+      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
         {label}
       </p>
 
-      <p className="mt-1 text-lg font-semibold text-slate-900">
+      <p className="mt-1 text-lg font-bold text-white">
         {value}
       </p>
     </div>
@@ -1194,12 +1408,12 @@ function CalculationCard({
   description?: string;
 }) {
   return (
-    <div className="rounded-lg border border-blue-200 bg-white p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+    <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
+      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
         {label}
       </p>
 
-      <p className="mt-2 text-lg font-bold text-slate-900">
+      <p className="mt-2 text-lg font-black text-white">
         {value}
       </p>
 
@@ -1208,6 +1422,65 @@ function CalculationCard({
           {description}
         </p>
       )}
+    </div>
+  );
+}
+
+function CalculationValue({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div>
+      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+        {label}
+      </p>
+
+      <p className="mt-1 text-2xl font-black text-white">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function DarkBadge({
+  children,
+  tone,
+}: {
+  children: React.ReactNode;
+  tone: "cyan" | "amber";
+}) {
+  const classes =
+    tone === "cyan"
+      ? "border-cyan-500/20 bg-cyan-950/40 text-cyan-300"
+      : "border-amber-500/20 bg-amber-950/40 text-amber-300";
+
+  return (
+    <span
+      className={`rounded-full border px-3 py-1 text-xs font-bold ${classes}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function EmptyState({
+  text,
+}: {
+  text: string;
+}) {
+  return (
+    <div className="mt-5 rounded-xl border border-slate-800 bg-slate-950 p-6">
+      <div className="flex items-center gap-3">
+        <RefreshCw className="h-5 w-5 text-slate-500" />
+
+        <p className="text-sm text-slate-400">
+          {text}
+        </p>
+      </div>
     </div>
   );
 }

@@ -171,7 +171,9 @@ export default function SuppliersPage() {
     setFormError("");
   }
 
-  async function handleCreateSupplier(event: FormEvent<HTMLFormElement>) {
+  async function handleCreateSupplier(
+    event: FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
 
     if (!user) {
@@ -234,10 +236,10 @@ export default function SuppliersPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-50 p-6">
+      <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-center py-32">
-          <div className="flex items-center gap-3 text-slate-600">
-            <Loader2 className="h-5 w-5 animate-spin" />
+          <div className="flex items-center gap-3 text-slate-300">
+            <Loader2 className="h-5 w-5 animate-spin text-cyan-400" />
             Loading suppliers...
           </div>
         </div>
@@ -247,8 +249,8 @@ export default function SuppliersPage() {
 
   if (!user) {
     return (
-      <main className="min-h-screen bg-slate-50 p-6">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
+      <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-red-500/30 bg-red-950/40 p-6 text-red-300">
           {error || "Unable to load the current user."}
         </div>
       </main>
@@ -256,25 +258,24 @@ export default function SuppliersPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 p-6">
+    <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
-
         {/* Header */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-xl">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <div className="mb-2 flex items-center gap-2 text-sm font-medium text-blue-600">
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-cyan-400">
                 <Truck className="h-4 w-4" />
                 Procurement
               </div>
 
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              <h1 className="text-3xl font-bold tracking-tight text-white">
                 Suppliers
               </h1>
 
-              <p className="mt-1 max-w-2xl text-sm text-slate-500">
-                Manage the suppliers used for purchase orders
-                and stock procurement.
+              <p className="mt-2 max-w-2xl text-sm text-slate-400">
+                Manage suppliers used for purchase orders and stock
+                procurement.
               </p>
             </div>
 
@@ -282,7 +283,7 @@ export default function SuppliersPage() {
               <button
                 type="button"
                 onClick={openCreateModal}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-400"
               >
                 <Plus className="h-4 w-4" />
                 Add Supplier
@@ -293,7 +294,7 @@ export default function SuppliersPage() {
 
         {/* Success */}
         {successMessage && (
-          <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <div className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-300">
             <CheckCircle2 className="h-5 w-5 shrink-0" />
             <span>{successMessage}</span>
           </div>
@@ -301,89 +302,62 @@ export default function SuppliersPage() {
 
         {/* Error */}
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-sm text-red-300">
             {error}
           </div>
         )}
 
         {/* Stats */}
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-500">
-                  Total Suppliers
-                </p>
-                <p className="mt-2 text-3xl font-bold text-slate-900">
-                  {suppliers.length}
-                </p>
-              </div>
+          <StatCard
+            label="Total Suppliers"
+            value={suppliers.length}
+            icon={<Building2 className="h-6 w-6" />}
+            accent="cyan"
+          />
 
-              <div className="rounded-xl bg-blue-50 p-3 text-blue-600">
-                <Building2 className="h-6 w-6" />
-              </div>
-            </div>
-          </div>
+          <StatCard
+            label="With Contact Person"
+            value={
+              suppliers.filter(
+                (supplier) => supplier.contact_name,
+              ).length
+            }
+            icon={<UserRound className="h-6 w-6" />}
+            accent="violet"
+          />
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-500">
-                  With Contact Person
-                </p>
-                <p className="mt-2 text-3xl font-bold text-slate-900">
-                  {
-                    suppliers.filter(
-                      (supplier) => supplier.contact_name,
-                    ).length
-                  }
-                </p>
-              </div>
-
-              <div className="rounded-xl bg-violet-50 p-3 text-violet-600">
-                <UserRound className="h-6 w-6" />
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-500">
-                  With Email
-                </p>
-                <p className="mt-2 text-3xl font-bold text-slate-900">
-                  {
-                    suppliers.filter(
-                      (supplier) => supplier.email,
-                    ).length
-                  }
-                </p>
-              </div>
-
-              <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600">
-                <Mail className="h-6 w-6" />
-              </div>
-            </div>
-          </div>
+          <StatCard
+            label="With Email"
+            value={
+              suppliers.filter(
+                (supplier) => supplier.email,
+              ).length
+            }
+            icon={<Mail className="h-6 w-6" />}
+            accent="emerald"
+          />
         </section>
 
-        {/* Supplier list */}
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 p-5">
+        {/* Supplier directory */}
+        <section className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-xl">
+          <div className="border-b border-slate-700 p-5">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <h2 className="font-semibold text-slate-900">
+                <h2 className="font-bold text-white">
                   Supplier Directory
                 </h2>
+
                 <p className="mt-1 text-sm text-slate-500">
                   {filteredSuppliers.length} supplier
-                  {filteredSuppliers.length === 1 ? "" : "s"} shown
+                  {filteredSuppliers.length === 1
+                    ? ""
+                    : "s"} shown
                 </p>
               </div>
 
               <div className="relative w-full md:max-w-sm">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
 
                 <input
                   value={search}
@@ -391,24 +365,24 @@ export default function SuppliersPage() {
                     setSearch(event.target.value)
                   }
                   placeholder="Search suppliers..."
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-4 text-sm outline-none transition focus:border-slate-400 focus:bg-white"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 py-2.5 pl-9 pr-4 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30"
                 />
               </div>
             </div>
           </div>
 
           {loadingSuppliers ? (
-            <div className="flex items-center justify-center py-20 text-sm text-slate-500">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <div className="flex items-center justify-center py-20 text-sm text-slate-400">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin text-cyan-400" />
               Loading suppliers...
             </div>
           ) : filteredSuppliers.length === 0 ? (
             <div className="px-6 py-20 text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
-                <Truck className="h-7 w-7 text-slate-400" />
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-700 bg-slate-950">
+                <Truck className="h-7 w-7 text-slate-500" />
               </div>
 
-              <h3 className="font-semibold text-slate-900">
+              <h3 className="font-bold text-white">
                 {search
                   ? "No suppliers found"
                   : "No suppliers yet"}
@@ -426,7 +400,7 @@ export default function SuppliersPage() {
                 <button
                   type="button"
                   onClick={openCreateModal}
-                  className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+                  className="mt-5 inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-400"
                 >
                   <Plus className="h-4 w-4" />
                   Add Supplier
@@ -437,7 +411,7 @@ export default function SuppliersPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px]">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <tr className="border-b border-slate-700 bg-slate-950 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
                     <th className="px-5 py-4">Supplier</th>
                     <th className="px-5 py-4">Contact</th>
                     <th className="px-5 py-4">Email</th>
@@ -451,37 +425,38 @@ export default function SuppliersPage() {
                   {filteredSuppliers.map((supplier) => (
                     <tr
                       key={supplier.id}
-                      className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50"
+                      className="border-b border-slate-800 last:border-b-0 hover:bg-slate-800/50"
                     >
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-950/50 text-cyan-400">
                             <Building2 className="h-5 w-5" />
                           </div>
 
                           <div>
-                            <p className="font-semibold text-slate-900">
+                            <p className="font-semibold text-white">
                               {supplier.name}
                             </p>
-                            <p className="text-xs text-slate-400">
+
+                            <p className="text-xs text-slate-600">
                               Supplier
                             </p>
                           </div>
                         </div>
                       </td>
 
-                      <td className="px-5 py-4 text-sm text-slate-600">
+                      <td className="px-5 py-4 text-sm text-slate-300">
                         {supplier.contact_name || "—"}
                       </td>
 
                       <td className="px-5 py-4">
                         {supplier.email ? (
-                          <div className="flex items-center gap-2 text-sm text-slate-600">
-                            <Mail className="h-4 w-4 text-slate-400" />
+                          <div className="flex items-center gap-2 text-sm text-slate-300">
+                            <Mail className="h-4 w-4 text-slate-500" />
                             {supplier.email}
                           </div>
                         ) : (
-                          <span className="text-sm text-slate-400">
+                          <span className="text-sm text-slate-600">
                             —
                           </span>
                         )}
@@ -489,12 +464,12 @@ export default function SuppliersPage() {
 
                       <td className="px-5 py-4">
                         {supplier.phone ? (
-                          <div className="flex items-center gap-2 text-sm text-slate-600">
-                            <Phone className="h-4 w-4 text-slate-400" />
+                          <div className="flex items-center gap-2 text-sm text-slate-300">
+                            <Phone className="h-4 w-4 text-slate-500" />
                             {supplier.phone}
                           </div>
                         ) : (
-                          <span className="text-sm text-slate-400">
+                          <span className="text-sm text-slate-600">
                             —
                           </span>
                         )}
@@ -502,21 +477,24 @@ export default function SuppliersPage() {
 
                       <td className="max-w-xs px-5 py-4">
                         {supplier.address ? (
-                          <div className="flex items-start gap-2 text-sm text-slate-600">
-                            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                          <div className="flex items-start gap-2 text-sm text-slate-300">
+                            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+
                             <span className="line-clamp-2">
                               {supplier.address}
                             </span>
                           </div>
                         ) : (
-                          <span className="text-sm text-slate-400">
+                          <span className="text-sm text-slate-600">
                             —
                           </span>
                         )}
                       </td>
 
-                      <td className="px-5 py-4 text-sm text-slate-500">
-                        {formatDate(supplier.created_at)}
+                      <td className="px-5 py-4 text-sm text-slate-400">
+                        {formatDate(
+                          supplier.created_at,
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -526,8 +504,9 @@ export default function SuppliersPage() {
           )}
         </section>
 
+        {/* Permission notice */}
         {user.role !== "admin" && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <div className="rounded-xl border border-amber-500/30 bg-amber-950/30 px-4 py-3 text-sm text-amber-300">
             Only administrators can add suppliers. You can still
             view the supplier directory.
           </div>
@@ -536,13 +515,14 @@ export default function SuppliersPage() {
 
       {/* Create Supplier Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
-          <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-700 px-6 py-5">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">
+                <h2 className="text-lg font-bold text-white">
                   Add Supplier
                 </h2>
+
                 <p className="mt-1 text-sm text-slate-500">
                   Add a supplier for future procurement and purchase
                   orders.
@@ -553,7 +533,7 @@ export default function SuppliersPage() {
                 type="button"
                 onClick={closeCreateModal}
                 disabled={creating}
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Close"
               >
                 <X className="h-5 w-5" />
@@ -562,104 +542,76 @@ export default function SuppliersPage() {
 
             <form onSubmit={handleCreateSupplier}>
               <div className="space-y-5 p-6">
-
                 {formError && (
-                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  <div className="rounded-xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-sm text-red-300">
                     {formError}
                   </div>
                 )}
 
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Supplier Name *
-                  </label>
+                <DarkInput
+                  label="Supplier Name *"
+                  value={form.name}
+                  onChange={(value) =>
+                    setForm((current) => ({
+                      ...current,
+                      name: value,
+                    }))
+                  }
+                  placeholder="e.g. ABC Office Supplies"
+                  disabled={creating}
+                  error={duplicateName}
+                />
 
-                  <input
-                    value={form.name}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        name: event.target.value,
-                      }))
-                    }
-                    placeholder="e.g. ABC Office Supplies"
-                    className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition ${
-                      duplicateName
-                        ? "border-red-300 bg-red-50 focus:border-red-400"
-                        : "border-slate-200 bg-white focus:border-slate-400"
-                    }`}
-                    disabled={creating}
-                  />
-
-                  {duplicateName && (
-                    <p className="mt-1.5 text-xs text-red-600">
-                      A supplier with this name already exists.
-                    </p>
-                  )}
-                </div>
+                {duplicateName && (
+                  <p className="-mt-3 text-xs text-red-400">
+                    A supplier with this name already exists.
+                  </p>
+                )}
 
                 <div className="grid gap-5 md:grid-cols-2">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Contact Person
-                    </label>
-
-                    <input
-                      value={form.contact_name}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          contact_name: event.target.value,
-                        }))
-                      }
-                      placeholder="e.g. Rahul Sharma"
-                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-slate-400"
-                      disabled={creating}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Email
-                    </label>
-
-                    <input
-                      type="email"
-                      value={form.email}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          email: event.target.value,
-                        }))
-                      }
-                      placeholder="supplier@example.com"
-                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-slate-400"
-                      disabled={creating}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Phone
-                  </label>
-
-                  <input
-                    value={form.phone}
-                    onChange={(event) =>
+                  <DarkInput
+                    label="Contact Person"
+                    value={form.contact_name}
+                    onChange={(value) =>
                       setForm((current) => ({
                         ...current,
-                        phone: event.target.value,
+                        contact_name: value,
                       }))
                     }
-                    placeholder="+91 98765 43210"
-                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-slate-400"
+                    placeholder="e.g. Rahul Sharma"
+                    disabled={creating}
+                  />
+
+                  <DarkInput
+                    label="Email"
+                    type="email"
+                    value={form.email}
+                    onChange={(value) =>
+                      setForm((current) => ({
+                        ...current,
+                        email: value,
+                      }))
+                    }
+                    placeholder="supplier@example.com"
                     disabled={creating}
                   />
                 </div>
 
+                <DarkInput
+                  label="Phone"
+                  value={form.phone}
+                  onChange={(value) =>
+                    setForm((current) => ({
+                      ...current,
+                      phone: value,
+                    }))
+                  }
+                  placeholder="+91 98765 43210"
+                  disabled={creating}
+                />
+
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                  <label className="mb-2 block text-sm font-semibold text-slate-300">
                     Address
                   </label>
 
@@ -673,18 +625,18 @@ export default function SuppliersPage() {
                     }
                     placeholder="Supplier address"
                     rows={3}
-                    className="w-full resize-none rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-slate-400"
+                    className="w-full resize-none rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30"
                     disabled={creating}
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
+              <div className="flex items-center justify-end gap-3 border-t border-slate-700 bg-slate-950 px-6 py-4">
                 <button
                   type="button"
                   onClick={closeCreateModal}
                   disabled={creating}
-                  className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -696,12 +648,15 @@ export default function SuppliersPage() {
                     !form.name.trim() ||
                     duplicateName
                   }
-                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {creating && (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   )}
-                  {creating ? "Creating..." : "Create Supplier"}
+
+                  {creating
+                    ? "Creating..."
+                    : "Create Supplier"}
                 </button>
               </div>
             </form>
@@ -709,5 +664,95 @@ export default function SuppliersPage() {
         </div>
       )}
     </main>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  icon,
+  accent,
+}: {
+  label: string;
+  value: number;
+  icon: React.ReactNode;
+  accent: "cyan" | "violet" | "emerald";
+}) {
+  const styles = {
+    cyan: {
+      box: "border-cyan-500/20 bg-cyan-950/40",
+      icon: "text-cyan-400",
+    },
+    violet: {
+      box: "border-violet-500/20 bg-violet-950/40",
+      icon: "text-violet-400",
+    },
+    emerald: {
+      box: "border-emerald-500/20 bg-emerald-950/40",
+      icon: "text-emerald-400",
+    },
+  };
+
+  return (
+    <div className="rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-lg">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm text-slate-500">
+            {label}
+          </p>
+
+          <p className="mt-2 text-3xl font-black text-white">
+            {value}
+          </p>
+        </div>
+
+        <div
+          className={`rounded-xl border p-3 ${styles[accent].box} ${styles[accent].icon}`}
+        >
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DarkInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+  disabled,
+  type = "text",
+  error = false,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  disabled: boolean;
+  type?: string;
+  error?: boolean;
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-semibold text-slate-300">
+        {label}
+      </label>
+
+      <input
+        type={type}
+        value={value}
+        onChange={(event) =>
+          onChange(event.target.value)
+        }
+        placeholder={placeholder}
+        disabled={disabled}
+        className={`w-full rounded-xl border bg-slate-950 px-4 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-600 ${
+          error
+            ? "border-red-500/60 focus:border-red-400"
+            : "border-slate-700 focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30"
+        }`}
+      />
+    </div>
   );
 }

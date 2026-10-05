@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
+import {
+  Html5Qrcode,
+  Html5QrcodeScannerState,
+} from "html5-qrcode";
 
 import {
   getCurrentUser,
@@ -48,14 +51,6 @@ export default function ScannerPage() {
   const [isStarting, setIsStarting] =
     useState(true);
 
-  /*
-   * Start scanner after the component has mounted.
-   *
-   * IMPORTANT:
-   * The scanner HTML element is always rendered below.
-   * We therefore do not have the previous race condition
-   * where React had not yet created the scanner element.
-   */
   useEffect(() => {
     let cancelled = false;
 
@@ -78,11 +73,6 @@ export default function ScannerPage() {
           "Preparing camera...",
         );
 
-        /*
-         * Give React one browser frame to make sure
-         * the scanner element is mounted before
-         * Html5Qrcode tries to use it.
-         */
         await new Promise<void>((resolve) => {
           requestAnimationFrame(() => {
             resolve();
@@ -104,10 +94,6 @@ export default function ScannerPage() {
           );
         }
 
-        /*
-         * Prevent accidentally creating multiple
-         * scanner instances.
-         */
         if (scannerRef.current) {
           return;
         }
@@ -136,12 +122,6 @@ export default function ScannerPage() {
             },
           },
           async (decodedText) => {
-            /*
-             * html5-qrcode can detect the same
-             * barcode many times per second.
-             *
-             * This prevents duplicate API calls.
-             */
             if (
               scanningRef.current
             ) {
@@ -187,10 +167,6 @@ export default function ScannerPage() {
                 "Barcode detected, but item lookup failed.",
               );
             } finally {
-              /*
-               * Allow another scan after a short
-               * delay.
-               */
               window.setTimeout(() => {
                 scanningRef.current =
                   false;
@@ -199,12 +175,8 @@ export default function ScannerPage() {
           },
           () => {
             /*
-             * html5-qrcode calls the failure callback
-             * repeatedly while it is simply not seeing
-             * a barcode.
-             *
-             * We intentionally do not display those
-             * temporary scan failures.
+             * Ignore repeated temporary
+             * scan failures.
              */
           },
         );
@@ -257,9 +229,6 @@ export default function ScannerPage() {
 
     startScanner();
 
-    /*
-     * Cleanup when leaving the page.
-     */
     return () => {
       cancelled = true;
 
@@ -325,11 +294,9 @@ export default function ScannerPage() {
       return "#";
     }
 
-    return (
-      `/stock-operations?itemId=${encodeURIComponent(
-        item.id,
-      )}&operation=${operation}`
-    );
+    return `/stock-operations?itemId=${encodeURIComponent(
+      item.id,
+    )}&operation=${operation}`;
   }
 
   const canOperate =
@@ -337,99 +304,143 @@ export default function ScannerPage() {
     user?.role === "staff";
 
   return (
-    <main className="min-h-screen p-8">
-      <div className="mx-auto max-w-3xl">
-        {/* Page heading */}
-        <h1 className="text-2xl font-bold">
-          Barcode Scanner
-        </h1>
+    <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl">
+        {/* Header */}
+        <header className="mb-8 rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-xl">
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-400">
+                StockPulse
+              </p>
 
-        <p className="mt-2 text-gray-600">
-          Scan an item barcode to find
-          its StockPulse record.
-        </p>
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                Barcode Scanner
+              </h1>
 
-        {/* 
-          IMPORTANT:
-          This scanner container is ALWAYS rendered.
-          
-          This fixes the previous:
-          "HTML Element ... not found"
-          error.
-        */}
-        <div className="mt-6 overflow-hidden rounded-lg border bg-white">
-          <div
-            id={SCANNER_ELEMENT_ID}
-            className="min-h-[320px]"
-          />
-        </div>
-
-        {/* Scanner status */}
-        <div className="mt-4 rounded-lg border bg-gray-50 p-4">
-          <p className="text-sm font-medium">
-            Scanner status
-          </p>
-
-          <p className="mt-1 text-sm text-gray-600">
-            {status}
-          </p>
-        </div>
-
-        {/* Initializing indicator */}
-        {isStarting &&
-          !error && (
-            <div className="mt-4 rounded-lg border bg-white p-4">
-              <p className="text-sm text-gray-600">
-                Initializing camera and
-                scanner...
+              <p className="mt-2 text-slate-300">
+                Scan an item barcode to find its StockPulse record.
               </p>
             </div>
-          )}
 
-        {/* Scanned barcode */}
+            <div className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Scanner
+              </p>
+
+              <p className="mt-1 font-bold text-white">
+                Camera
+              </p>
+
+              <p className="mt-1 text-xs font-semibold text-cyan-300">
+                {user?.role ?? "CHECKING"}
+              </p>
+            </div>
+          </div>
+        </header>
+
+        {/* Camera */}
+        <section className="overflow-hidden rounded-2xl border border-cyan-500/20 bg-slate-900 shadow-xl">
+          <div className="border-b border-slate-700 px-5 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="font-bold text-white">
+                  Camera Scanner
+                </h2>
+
+                <p className="mt-1 text-xs text-slate-500">
+                  Point the rear camera at a barcode or QR code.
+                </p>
+              </div>
+
+              <div className="rounded-full border border-cyan-500/30 bg-cyan-950 px-3 py-1 text-xs font-bold text-cyan-300">
+                LIVE
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-black p-3 sm:p-5">
+            <div
+              id={SCANNER_ELEMENT_ID}
+              className="min-h-[320px] overflow-hidden rounded-xl bg-slate-950"
+            />
+          </div>
+        </section>
+
+        {/* Status */}
+        <section className="mt-4 rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-lg">
+          <div className="flex items-start gap-3">
+            <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.7)]" />
+
+            <div>
+              <p className="text-sm font-bold text-white">
+                Scanner status
+              </p>
+
+              <p className="mt-1 text-sm text-slate-400">
+                {status}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Initializing */}
+        {isStarting && !error && (
+          <section className="mt-4 rounded-2xl border border-amber-500/30 bg-amber-950/30 p-5">
+            <p className="text-sm font-semibold text-amber-300">
+              Initializing camera and scanner...
+            </p>
+
+            <p className="mt-1 text-xs text-amber-200/70">
+              Allow camera access if your browser asks for permission.
+            </p>
+          </section>
+        )}
+
+        {/* Barcode */}
         {scannedBarcode && (
-          <div className="mt-4 rounded-lg border bg-white p-4">
-            <p className="text-sm font-medium">
+          <section className="mt-4 rounded-2xl border border-blue-500/30 bg-slate-900 p-5 shadow-lg">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
               Scanned barcode
             </p>
 
-            <p className="mt-1 font-mono text-sm">
+            <p className="mt-2 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 font-mono text-sm text-cyan-300">
               {scannedBarcode}
             </p>
-          </div>
+          </section>
         )}
 
-        {/* Scanner / lookup error */}
+        {/* Error */}
         {error && (
-          <div className="mt-4 rounded-lg border border-red-300 bg-red-50 p-4">
-            <p className="font-medium text-red-800">
+          <section className="mt-4 rounded-2xl border border-red-500/40 bg-red-950/40 p-5">
+            <p className="font-bold text-red-300">
               Scanner error
             </p>
 
-            <p className="mt-1 break-words text-sm text-red-700">
+            <p className="mt-2 break-words text-sm text-red-200">
               {error}
             </p>
 
             <button
               type="button"
               onClick={clearResult}
-              className="mt-3 rounded-md border px-3 py-2 text-sm"
+              className="mt-4 rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-2.5 text-sm font-bold text-red-300 transition hover:bg-red-500/20"
             >
               Clear Result
             </button>
-          </div>
+          </section>
         )}
 
         {/* Item result */}
         {item && (
-          <div className="mt-4 rounded-lg border bg-white p-5">
-            <div className="flex items-center justify-between gap-4">
+          <section className="mt-4 rounded-2xl border border-emerald-500/30 bg-slate-900 p-6 shadow-xl">
+            <div className="flex flex-col justify-between gap-4 border-b border-slate-700 pb-5 sm:flex-row sm:items-center">
               <div>
-                <p className="text-sm text-gray-500">
+                <p className="text-xs font-bold uppercase tracking-wide text-emerald-400">
                   Item found
                 </p>
 
-                <h2 className="mt-1 text-xl font-semibold">
+                <h2 className="mt-1 text-2xl font-black text-white">
                   {item.name}
                 </h2>
               </div>
@@ -437,150 +448,191 @@ export default function ScannerPage() {
               <button
                 type="button"
                 onClick={clearResult}
-                className="rounded-md border px-3 py-2 text-sm"
+                className="rounded-xl border border-slate-600 bg-slate-950 px-4 py-2.5 text-sm font-bold text-slate-200 transition hover:bg-slate-800"
               >
                 Scan Again
               </button>
             </div>
 
             {/* Item information */}
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div>
-                <p className="text-xs uppercase text-gray-500">
-                  SKU
-                </p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <InfoCard
+                label="SKU"
+                value={item.sku}
+              />
 
-                <p className="mt-1 font-medium">
-                  {item.sku}
-                </p>
-              </div>
+              <InfoCard
+                label="Barcode"
+                value={
+                  item.barcode ??
+                  scannedBarcode
+                }
+                mono
+              />
 
-              <div>
-                <p className="text-xs uppercase text-gray-500">
-                  Barcode
-                </p>
+              <InfoCard
+                label="Unit"
+                value={item.unit}
+              />
 
-                <p className="mt-1 font-mono text-sm">
-                  {item.barcode ??
-                    scannedBarcode}
-                </p>
-              </div>
+              <InfoCard
+                label="Reorder Point"
+                value={String(
+                  item.reorder_point,
+                )}
+              />
 
-              <div>
-                <p className="text-xs uppercase text-gray-500">
-                  Unit
-                </p>
+              <InfoCard
+                label="Reorder Quantity"
+                value={String(
+                  item.reorder_quantity,
+                )}
+              />
 
-                <p className="mt-1 font-medium">
-                  {item.unit}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs uppercase text-gray-500">
-                  Reorder Point
-                </p>
-
-                <p className="mt-1 font-medium">
-                  {item.reorder_point}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs uppercase text-gray-500">
-                  Reorder Quantity
-                </p>
-
-                <p className="mt-1 font-medium">
-                  {item.reorder_quantity}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs uppercase text-gray-500">
-                  Lead Time
-                </p>
-
-                <p className="mt-1 font-medium">
-                  {item.lead_time_days}{" "}
-                  days
-                </p>
-              </div>
+              <InfoCard
+                label="Lead Time"
+                value={`${item.lead_time_days} days`}
+              />
             </div>
 
-            {/* 
-              Stock operation actions.
-              
-              These appear only after a valid
-              item has been found.
-            */}
+            {/* Operations */}
             {canOperate && (
-              <div className="mt-6 border-t pt-5">
-                <p className="text-sm font-medium">
-                  What would you like to
-                  do with this item?
+              <div className="mt-7 border-t border-slate-700 pt-6">
+                <p className="text-sm font-bold text-white">
+                  Stock Operations
                 </p>
 
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <a
+                <p className="mt-1 text-xs text-slate-500">
+                  Choose an operation for the scanned item.
+                </p>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <OperationLink
                     href={getStockOperationUrl(
                       "receive",
                     )}
-                    className="rounded-lg border px-4 py-3 text-center font-medium hover:bg-gray-50"
-                  >
-                    Receive Stock
-                  </a>
+                    label="Receive Stock"
+                    accent="emerald"
+                  />
 
-                  <a
+                  <OperationLink
                     href={getStockOperationUrl(
                       "issue",
                     )}
-                    className="rounded-lg border px-4 py-3 text-center font-medium hover:bg-gray-50"
-                  >
-                    Issue Stock
-                  </a>
+                    label="Issue Stock"
+                    accent="blue"
+                  />
 
-                  <a
+                  <OperationLink
                     href={getStockOperationUrl(
                       "wastage",
                     )}
-                    className="rounded-lg border px-4 py-3 text-center font-medium hover:bg-gray-50"
-                  >
-                    Record Wastage
-                  </a>
+                    label="Record Wastage"
+                    accent="red"
+                  />
 
-                  <a
+                  <OperationLink
                     href={getStockOperationUrl(
                       "transfer",
                     )}
-                    className="rounded-lg border px-4 py-3 text-center font-medium hover:bg-gray-50"
-                  >
-                    Transfer Stock
-                  </a>
+                    label="Transfer Stock"
+                    accent="violet"
+                  />
 
-                  <a
+                  <OperationLink
                     href={getStockOperationUrl(
                       "fefo",
                     )}
-                    className="rounded-lg border px-4 py-3 text-center font-medium hover:bg-gray-50 sm:col-span-2"
-                  >
-                    FEFO Issue
-                  </a>
+                    label="FEFO Issue"
+                    accent="amber"
+                    fullWidth
+                  />
                 </div>
               </div>
             )}
 
-            {/* Viewer message */}
+            {/* Viewer */}
             {!canOperate && (
-              <div className="mt-6 rounded-lg bg-gray-50 p-4 text-sm text-gray-600">
-                Your role can scan and
-                view items but cannot
-                perform stock operations.
+              <div className="mt-6 rounded-xl border border-slate-700 bg-slate-950 p-4">
+                <p className="text-sm font-semibold text-slate-300">
+                  View-only access
+                </p>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Your role can scan and view items but cannot perform stock operations.
+                </p>
               </div>
             )}
-          </div>
+          </section>
         )}
       </div>
     </main>
+  );
+}
+
+function InfoCard({
+  label,
+  value,
+  mono = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
+      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+        {label}
+      </p>
+
+      <p
+        className={`mt-2 break-words font-semibold text-white ${
+          mono ? "font-mono text-sm text-cyan-300" : ""
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function OperationLink({
+  href,
+  label,
+  accent,
+  fullWidth = false,
+}: {
+  href: string;
+  label: string;
+  accent:
+    | "emerald"
+    | "blue"
+    | "red"
+    | "violet"
+    | "amber";
+  fullWidth?: boolean;
+}) {
+  const classes = {
+    emerald:
+      "border-emerald-500/30 bg-emerald-950/50 text-emerald-300 hover:bg-emerald-950",
+    blue:
+      "border-blue-500/30 bg-blue-950/50 text-blue-300 hover:bg-blue-950",
+    red:
+      "border-red-500/30 bg-red-950/50 text-red-300 hover:bg-red-950",
+    violet:
+      "border-violet-500/30 bg-violet-950/50 text-violet-300 hover:bg-violet-950",
+    amber:
+      "border-amber-500/30 bg-amber-950/50 text-amber-300 hover:bg-amber-950",
+  };
+
+  return (
+    <a
+      href={href}
+      className={`rounded-xl border px-4 py-3.5 text-center text-sm font-bold transition ${classes[accent]} ${
+        fullWidth ? "sm:col-span-2" : ""
+      }`}
+    >
+      {label}
+    </a>
   );
 }
