@@ -17,7 +17,6 @@ from app.schemas.batch import (
     BatchResponse,
 )
 
-
 router = APIRouter(
     prefix="/api/v1/organizations/{organization_id}/items/{item_id}/batches",
     tags=["Batches"],
@@ -39,7 +38,7 @@ def create_batch(
 
     if item is None or item.organization_id != organization_id:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=404,
             detail="Item not found",
         )
 
@@ -52,7 +51,7 @@ def create_batch(
 
     if existing_batch is not None:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
+            status_code=409,
             detail="A batch with this lot number already exists for this item",
         )
 
@@ -82,14 +81,17 @@ def list_batches(
 
     if item is None or item.organization_id != organization_id:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=404,
             detail="Item not found",
         )
 
     statement = (
         select(Batch)
         .where(Batch.item_id == item_id)
-        .order_by(Batch.expiry_date)
+        .order_by(
+            Batch.expiry_date,
+            Batch.received_at,
+        )
     )
 
     return db.scalars(statement).all()
@@ -109,7 +111,7 @@ def get_batch(
 
     if item is None or item.organization_id != organization_id:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=404,
             detail="Item not found",
         )
 
@@ -117,7 +119,7 @@ def get_batch(
 
     if batch is None or batch.item_id != item_id:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=404,
             detail="Batch not found",
         )
 
@@ -130,11 +132,10 @@ def get_batch(
 )
 def archive_batch(
     organization_id: UUID,
+    item_id: UUID,
     batch_id: UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(
-        require_roles(UserRole.ADMIN)
-    ),
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
 ):
     if current_user.organization_id != organization_id:
         raise HTTPException(
@@ -142,12 +143,18 @@ def archive_batch(
             detail="You do not have access to this organization",
         )
 
+    item = db.get(Item, item_id)
+
+    if item is None or item.organization_id != organization_id:
+        raise HTTPException(
+            status_code=404,
+            detail="Item not found",
+        )
+
     batch = db.scalar(
-        select(Batch)
-        .join(Item, Item.id == Batch.item_id)
-        .where(
+        select(Batch).where(
             Batch.id == batch_id,
-            Item.organization_id == organization_id,
+            Batch.item_id == item_id,
         )
     )
 

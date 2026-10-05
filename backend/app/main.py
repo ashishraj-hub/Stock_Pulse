@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import (
     auth,
+    alerts,
     batches,
     health,
     inventory_lots,
@@ -50,6 +51,7 @@ app.include_router(inventory_lots.organization_inventory_router)
 app.include_router(stock_movements.router)
 app.include_router(users.router)
 app.include_router(auth.router)
+app.include_router(alerts.router)
 app.include_router(reorder.router)
 app.include_router(dashboard.router)
 app.include_router(audit_logs.router)

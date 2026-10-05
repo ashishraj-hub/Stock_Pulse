@@ -383,6 +383,7 @@ export default function BatchesPage() {
       const result =
         await archiveBatch(
           user.organization_id,
+          batch.item_id,
           batch.id,
         );
 

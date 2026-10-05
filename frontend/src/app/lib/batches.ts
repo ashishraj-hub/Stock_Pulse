@@ -29,6 +29,16 @@ export async function getBatches(
   );
 }
 
+export async function getBatch(
+  organizationId: string,
+  itemId: string,
+  batchId: string,
+): Promise<Batch> {
+  return apiRequest<Batch>(
+    `/api/v1/organizations/${organizationId}/items/${itemId}/batches/${batchId}`,
+  );
+}
+
 export async function createBatch(
   organizationId: string,
   itemId: string,
@@ -45,10 +55,11 @@ export async function createBatch(
 
 export async function archiveBatch(
   organizationId: string,
+  itemId: string,
   batchId: string,
 ): Promise<BatchArchiveResponse> {
   return apiRequest<BatchArchiveResponse>(
-    `/api/v1/organizations/${organizationId}/batches/${batchId}/archive`,
+    `/api/v1/organizations/${organizationId}/items/${itemId}/batches/${batchId}/archive`,
     {
       method: "POST",
     },

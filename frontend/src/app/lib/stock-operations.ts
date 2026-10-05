@@ -1,4 +1,10 @@
+"use client";
+
 import { apiRequest } from "./api";
+import {
+  addOfflineOperation,
+  type OfflineOperationType,
+} from "./offline-queue";
 
 export interface StockMovementResponse {
   id: string;
@@ -38,6 +44,102 @@ export interface FefoIssueRequest {
   reason?: string;
 }
 
+export type StockOperationResult<T> =
+  | {
+      status: "synced";
+      data: T;
+    }
+  | {
+      status: "queued";
+      queue_id: string;
+    };
+
+function isNetworkError(
+  error: unknown,
+): boolean {
+  return (
+    error instanceof TypeError ||
+    (typeof navigator !== "undefined" &&
+      !navigator.onLine)
+  );
+}
+
+async function executeOrQueue<T>(
+  operation: OfflineOperationType,
+  path: string,
+  body: unknown,
+): Promise<StockOperationResult<T>> {
+  /*
+   * If the browser already knows it is offline,
+   * immediately place the operation in IndexedDB.
+   */
+  if (
+    typeof window !== "undefined" &&
+    !navigator.onLine
+  ) {
+    const queueId =
+      await addOfflineOperation(
+        operation,
+        path,
+        body,
+      );
+
+    return {
+      status: "queued",
+      queue_id: queueId,
+    };
+  }
+
+  try {
+    const result =
+      await apiRequest<T>(
+        path,
+        {
+          method: "POST",
+          body: JSON.stringify(body),
+        },
+      );
+
+    return {
+      status: "synced",
+      data: result,
+    };
+  } catch (error) {
+    /*
+     * Only network failures are converted
+     * into offline queue operations.
+     *
+     * HTTP errors such as 400, 401, 403,
+     * 409 and 500 are still real errors.
+     */
+    if (!isNetworkError(error)) {
+      throw error;
+    }
+
+    const queueId =
+      await addOfflineOperation(
+        operation,
+        path,
+        body,
+      );
+
+    return {
+      status: "queued",
+      queue_id: queueId,
+    };
+  }
+}
+
+/*
+ * IMPORTANT:
+ *
+ * Receiving is NOT part of the offline stock
+ * operation queue.
+ *
+ * Receiving stock happens through Purchase
+ * Order receiving, so this remains a direct
+ * online API request.
+ */
 export async function receiveStock(
   organizationId: string,
   itemId: string,
@@ -60,13 +162,13 @@ export async function issueStock(
   batchId: string,
   locationId: string,
   data: IssueStockRequest,
-): Promise<StockMovementResponse> {
-  return apiRequest<StockMovementResponse>(
+): Promise<
+  StockOperationResult<StockMovementResponse>
+> {
+  return executeOrQueue(
+    "issue",
     `/api/v1/organizations/${organizationId}/items/${itemId}/batches/${batchId}/locations/${locationId}/issue`,
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    },
+    data,
   );
 }
 
@@ -76,13 +178,13 @@ export async function recordWastage(
   batchId: string,
   locationId: string,
   data: WastageStockRequest,
-): Promise<StockMovementResponse> {
-  return apiRequest<StockMovementResponse>(
+): Promise<
+  StockOperationResult<StockMovementResponse>
+> {
+  return executeOrQueue(
+    "wastage",
     `/api/v1/organizations/${organizationId}/items/${itemId}/batches/${batchId}/locations/${locationId}/wastage`,
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    },
+    data,
   );
 }
 
@@ -92,13 +194,13 @@ export async function transferStock(
   batchId: string,
   locationId: string,
   data: TransferStockRequest,
-): Promise<StockMovementResponse[]> {
-  return apiRequest<StockMovementResponse[]>(
+): Promise<
+  StockOperationResult<StockMovementResponse[]>
+> {
+  return executeOrQueue(
+    "transfer",
     `/api/v1/organizations/${organizationId}/items/${itemId}/batches/${batchId}/locations/${locationId}/transfer`,
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    },
+    data,
   );
 }
 
@@ -107,12 +209,12 @@ export async function fefoIssueStock(
   itemId: string,
   locationId: string,
   data: FefoIssueRequest,
-): Promise<StockMovementResponse[]> {
-  return apiRequest<StockMovementResponse[]>(
+): Promise<
+  StockOperationResult<StockMovementResponse[]>
+> {
+  return executeOrQueue(
+    "fefo",
     `/api/v1/organizations/${organizationId}/items/${itemId}/locations/${locationId}/fefo-issue`,
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    },
+    data,
   );
 }

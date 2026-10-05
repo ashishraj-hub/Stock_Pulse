@@ -1,15 +1,16 @@
-from uuid import UUID
 from datetime import datetime, timezone
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.audit import create_audit_log
-from app.core.dependencies import get_current_user, require_roles
+from app.core.dependencies import require_roles
 from app.db.dependencies import get_db
 from app.models.purchase_order import PurchaseOrder, PurchaseOrderStatus
 from app.models.user import User, UserRole
+from app.schemas.purchase_order import PurchaseOrderResponse
 
 
 router = APIRouter(
@@ -24,7 +25,9 @@ def get_purchase_order_or_404(
     purchase_order_id: UUID,
 ) -> PurchaseOrder:
     purchase_order = db.scalar(
-        select(PurchaseOrder).where(
+        select(PurchaseOrder)
+        .options(selectinload(PurchaseOrder.items))
+        .where(
             PurchaseOrder.id == purchase_order_id,
             PurchaseOrder.organization_id == organization_id,
         )
@@ -39,7 +42,33 @@ def get_purchase_order_or_404(
     return purchase_order
 
 
-@router.post("/{purchase_order_id}/submit")
+def get_purchase_order_with_items(
+    db: Session,
+    organization_id: UUID,
+    purchase_order_id: UUID,
+) -> PurchaseOrder:
+    purchase_order = db.scalar(
+        select(PurchaseOrder)
+        .options(selectinload(PurchaseOrder.items))
+        .where(
+            PurchaseOrder.id == purchase_order_id,
+            PurchaseOrder.organization_id == organization_id,
+        )
+    )
+
+    if purchase_order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Purchase order not found",
+        )
+
+    return purchase_order
+
+
+@router.post(
+    "/{purchase_order_id}/submit",
+    response_model=PurchaseOrderResponse,
+)
 def submit_purchase_order(
     organization_id: UUID,
     purchase_order_id: UUID,
@@ -82,12 +111,18 @@ def submit_purchase_order(
     )
 
     db.commit()
-    db.refresh(purchase_order)
 
-    return purchase_order
+    return get_purchase_order_with_items(
+        db,
+        organization_id,
+        purchase_order_id,
+    )
 
 
-@router.post("/{purchase_order_id}/approve")
+@router.post(
+    "/{purchase_order_id}/approve",
+    response_model=PurchaseOrderResponse,
+)
 def approve_purchase_order(
     organization_id: UUID,
     purchase_order_id: UUID,
@@ -130,12 +165,18 @@ def approve_purchase_order(
     )
 
     db.commit()
-    db.refresh(purchase_order)
 
-    return purchase_order
+    return get_purchase_order_with_items(
+        db,
+        organization_id,
+        purchase_order_id,
+    )
 
 
-@router.post("/{purchase_order_id}/order")
+@router.post(
+    "/{purchase_order_id}/order",
+    response_model=PurchaseOrderResponse,
+)
 def mark_purchase_order_ordered(
     organization_id: UUID,
     purchase_order_id: UUID,
@@ -179,12 +220,18 @@ def mark_purchase_order_ordered(
     )
 
     db.commit()
-    db.refresh(purchase_order)
 
-    return purchase_order
+    return get_purchase_order_with_items(
+        db,
+        organization_id,
+        purchase_order_id,
+    )
 
 
-@router.post("/{purchase_order_id}/cancel")
+@router.post(
+    "/{purchase_order_id}/cancel",
+    response_model=PurchaseOrderResponse,
+)
 def cancel_purchase_order(
     organization_id: UUID,
     purchase_order_id: UUID,
@@ -236,6 +283,9 @@ def cancel_purchase_order(
     )
 
     db.commit()
-    db.refresh(purchase_order)
 
-    return purchase_order
+    return get_purchase_order_with_items(
+        db,
+        organization_id,
+        purchase_order_id,
+    )
