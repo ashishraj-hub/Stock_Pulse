@@ -1,24 +1,27 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.core.config import settings
 from app.routers import (
-    auth,
     alerts,
+    analytics,
+    audit_logs,
+    auth,
     batches,
+    dashboard,
     health,
     inventory_lots,
     items,
     locations,
     organizations,
-    stock_movements,
-    users,
-    reorder,
-    dashboard,
-    audit_logs,
-    suppliers,
-    purchase_orders,
-    purchase_order_workflow,
     purchase_order_receiving,
-    analytics,
+    purchase_order_workflow,
+    purchase_orders,
+    reorder,
+    stock_movements,
+    suppliers,
+    users,
+    cost_analysis,
 )
 
 
@@ -28,17 +31,14 @@ app = FastAPI(
     version="0.1.0",
 )
 
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=settings.cors_origin_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 
 app.include_router(health.router)
@@ -60,3 +60,4 @@ app.include_router(purchase_orders.router)
 app.include_router(purchase_order_workflow.router)
 app.include_router(purchase_order_receiving.router)
 app.include_router(analytics.router)
+app.include_router(cost_analysis.router)

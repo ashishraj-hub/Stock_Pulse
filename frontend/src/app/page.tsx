@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+
 import {
   getCurrentUser,
   login,
@@ -8,6 +10,8 @@ import {
 } from "./lib/auth";
 
 export default function Home() {
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -30,10 +34,10 @@ export default function Home() {
       const user = await getCurrentUser();
 
       setMessage(
-        `Welcome ${user.name}. Role: ${user.role}`,
+        `Welcome ${user.name}. Redirecting...`,
       );
 
-
+      router.push("/dashboard");
     } catch (error) {
       setMessage(
         error instanceof Error

@@ -16,6 +16,7 @@ import {
   Truck,
   Users,
   Warehouse,
+  Wallet,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -36,119 +37,123 @@ interface NavigationSection {
   items: NavigationItem[];
 }
 
-const navigationSections: NavigationSection[] =
-  [
-    {
-      label: "Overview",
-      items: [
-        {
-          label: "Dashboard",
-          href: "/dashboard",
-          icon: LayoutDashboard,
-        },
-      ],
-    },
-    {
-      label: "Inventory",
-      items: [
-        {
-          label: "Inventory",
-          href: "/inventory",
-          icon: Boxes,
-        },
-        {
-          label: "Items",
-          href: "/items",
-          icon: Package,
-        },
-        {
-          label: "Locations",
-          href: "/locations",
-          icon: Warehouse,
-        },
-        {
-          label: "Batches",
-          href: "/batches",
-          icon: ClipboardList,
-        },
-      ],
-    },
-    {
-      label: "Stock",
-      items: [
-        {
-          label: "Scanner",
-          href: "/scanner",
-          icon: ScanLine,
-        },
-        {
-          label: "Stock Operations",
-          href: "/stock-operations",
-          icon: Settings,
-        },
-        {
-          label: "Stock Movements",
-          href: "/stock-movements",
-          icon: Truck,
-        },
-      ],
-    },
-    {
-      label: "Procurement",
-      items: [
-        {
-          label: "Suppliers",
-          href: "/suppliers",
-          icon: Users,
-        },
-        {
-          label: "Purchase Orders",
-          href: "/purchase-orders",
-          icon: ShoppingCart,
-        },
-      ],
-    },
-    {
-      label: "Intelligence",
-      items: [
-        {
-          label: "Alerts",
-          href: "/alerts",
-          icon: Bell,
-        },
-        {
-          label: "Reorder Center",
-          href: "/reorder-center",
-          icon: ClipboardList,
-        },
-        {
-          label: "Smart Reorder",
-          href: "/smart-reorder",
-          icon: BarChart3,
-        },
-        {
-          label: "Analytics",
-          href: "/analytics",
-          icon: BarChart3,
-        },
-      ],
-    },
-    {
-      label: "Administration",
-      items: [
-        {
-          label: "Users",
-          href: "/users",
-          icon: Users,
-        },
-        {
-          label: "Audit Log",
-          href: "/audit",
-          icon: ShieldCheck,
-        },
-      ],
-    },
-  ];
+const navigationSections: NavigationSection[] = [
+  {
+    label: "Overview",
+    items: [
+      {
+        label: "Dashboard",
+        href: "/dashboard",
+        icon: LayoutDashboard,
+      },
+    ],
+  },
+  {
+    label: "Inventory",
+    items: [
+      {
+        label: "Inventory",
+        href: "/inventory",
+        icon: Boxes,
+      },
+      {
+        label: "Items",
+        href: "/items",
+        icon: Package,
+      },
+      {
+        label: "Locations",
+        href: "/locations",
+        icon: Warehouse,
+      },
+      {
+        label: "Batches",
+        href: "/batches",
+        icon: ClipboardList,
+      },
+    ],
+  },
+  {
+    label: "Stock",
+    items: [
+      {
+        label: "Scanner",
+        href: "/scanner",
+        icon: ScanLine,
+      },
+      {
+        label: "Stock Operations",
+        href: "/stock-operations",
+        icon: Settings,
+      },
+      {
+        label: "Stock Movements",
+        href: "/stock-movements",
+        icon: Truck,
+      },
+    ],
+  },
+  {
+    label: "Procurement",
+    items: [
+      {
+        label: "Suppliers",
+        href: "/suppliers",
+        icon: Users,
+      },
+      {
+        label: "Purchase Orders",
+        href: "/purchase-orders",
+        icon: ShoppingCart,
+      },
+    ],
+  },
+  {
+    label: "Intelligence",
+    items: [
+      {
+        label: "Alerts",
+        href: "/alerts",
+        icon: Bell,
+      },
+      {
+        label: "Reorder Center",
+        href: "/reorder-center",
+        icon: ClipboardList,
+      },
+      {
+        label: "Smart Reorder",
+        href: "/smart-reorder",
+        icon: BarChart3,
+      },
+      {
+        label: "Analytics",
+        href: "/analytics",
+        icon: BarChart3,
+      },
+      {
+        label: "Cost Analysis",
+        href: "/cost-analysis",
+        icon: Wallet,
+      },
+    ],
+  },
+  {
+    label: "Administration",
+    items: [
+      {
+        label: "Users",
+        href: "/users",
+        icon: Users,
+      },
+      {
+        label: "Audit Log",
+        href: "/audit",
+        icon: ShieldCheck,
+      },
+    ],
+  },
+];
 
 function isActivePath(
   pathname: string,
@@ -170,6 +175,7 @@ export default function AppShell({
   const pathname = usePathname();
 
   const publicPages = [
+    "/",
     "/login",
     "/register",
     "/onboarding",
