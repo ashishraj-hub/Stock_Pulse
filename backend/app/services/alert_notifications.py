@@ -21,10 +21,11 @@ def dispatch_alert_notifications(
     email_recipient: str | None = None,
 ) -> dict[str, int]:
     """
-    Deliver notifications for newly detected alerts.
+    Deliver notifications for currently active alerts.
 
     Each alert/channel combination is recorded in notification_events
-    after a successful delivery, preventing duplicate notifications.
+    after successful delivery. This prevents duplicate notifications
+    across repeated scheduler runs and Alert Center refreshes.
 
     Notification failures do not prevent the Alert Center from working.
     """
@@ -49,12 +50,14 @@ def dispatch_alert_notifications(
             f"Severity: {alert.severity}"
         )
 
-        # Email channel
+        # ---------------------------------------------------------
+        # EMAIL
+        # ---------------------------------------------------------
+
         if email_recipient:
             existing_email = db.scalar(
                 select(NotificationEvent.id).where(
-                    NotificationEvent.organization_id
-                    == organization_id,
+                    NotificationEvent.organization_id == organization_id,
                     NotificationEvent.alert_id == alert.id,
                     NotificationEvent.channel == "email",
                 )
@@ -75,13 +78,16 @@ def dispatch_alert_notifications(
                             channel="email",
                         )
                     )
+
                     email_sent += 1
 
-        # Telegram channel
+        # ---------------------------------------------------------
+        # TELEGRAM
+        # ---------------------------------------------------------
+
         existing_telegram = db.scalar(
             select(NotificationEvent.id).where(
-                NotificationEvent.organization_id
-                == organization_id,
+                NotificationEvent.organization_id == organization_id,
                 NotificationEvent.alert_id == alert.id,
                 NotificationEvent.channel == "telegram",
             )
@@ -100,9 +106,11 @@ def dispatch_alert_notifications(
                         channel="telegram",
                     )
                 )
+
                 telegram_sent += 1
 
-    db.commit()
+    if email_sent or telegram_sent:
+        db.commit()
 
     logger.info(
         "Alert notifications dispatched: email=%s telegram=%s",
