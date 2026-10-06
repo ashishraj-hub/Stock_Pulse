@@ -650,7 +650,7 @@ git commit -m "Describe the change"
 
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=20&pause=1200&color=A78BFA&center=true&vCenter=true&width=600&lines=Hi%2C+I'm+Ashish+Raj+%F0%9F%91%8B;B.Tech+CSE+%40+VIT-AP;AI%2FML+%26+Data+Builder;Open+to+internship+opportunities" alt="Author typing animation" />
+<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=20&pause=1200&color=A78BFA&center=true&vCenter=true&width=600&lines=Hi%2C+I'm+Ashish+Raj+%F0%9F%91%8B;B.Tech+CSE+%40+VIT-AP;SDE%2FProjects+%26+Data+Builder;Open+to+internship+opportunities" alt="Author typing animation" />
 
 ### **Ashish Raj**
 
