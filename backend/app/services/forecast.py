@@ -1,5 +1,4 @@
-from datetime import date, timedelta
-from uuid import UUID
+from datetime import timedelta
 
 import pandas as pd
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
@@ -34,27 +33,50 @@ def build_forecast(
     - 0-2 historical observations:
         insufficient history
     - 3-6 observations:
-        moving-average fallback
+        weighted moving-average fallback
     - 7+ observations:
         Holt exponential smoothing
+    - If Holt fails:
+        moving-average fallback
 
-    Missing dates are treated as zero usage so that the model
+    Missing dates are treated as zero usage so the model
     receives a continuous daily time series.
     """
 
     if forecast_days < 1 or forecast_days > 90:
-        raise ValueError("forecast_days must be between 1 and 90")
+        raise ValueError(
+            "forecast_days must be between 1 and 90"
+        )
 
     if not usage_history:
-        raise ValueError("At least one usage-history record is required")
+        raise ValueError(
+            "At least one usage-history record is required"
+        )
+
+    # ---------------------------------------------------------
+    # Build normalized daily history
+    # ---------------------------------------------------------
 
     history = pd.DataFrame(usage_history)
 
-    history["date"] = pd.to_datetime(history["date"])
+    history["date"] = pd.to_datetime(
+        history["date"],
+        errors="coerce",
+    )
+
     history["quantity"] = pd.to_numeric(
         history["quantity"],
         errors="coerce",
     ).fillna(0)
+
+    history = history.dropna(
+        subset=["date"],
+    )
+
+    if history.empty:
+        raise ValueError(
+            "At least one valid usage-history record is required"
+        )
 
     history = (
         history[["date", "quantity"]]
@@ -62,6 +84,10 @@ def build_forecast(
         .sum()
         .sort_values("date")
     )
+
+    # ---------------------------------------------------------
+    # Fill missing calendar dates with zero usage
+    # ---------------------------------------------------------
 
     start_date = history["date"].min()
     end_date = history["date"].max()
@@ -81,32 +107,51 @@ def build_forecast(
 
     quantities = history["quantity"].astype(float)
 
-    average_daily_usage = float(quantities.mean())
+    average_daily_usage = float(
+        quantities.mean()
+    )
 
     if len(quantities) < 3:
         raise ValueError(
-            "At least 3 days of usage history are required for forecasting"
+            "At least 3 days of usage history are required "
+            "for forecasting"
         )
 
     # ---------------------------------------------------------
-    # Short history fallback
+    # Variables used by both forecasting paths
+    # ---------------------------------------------------------
+
+    predicted_daily_usage = 0.0
+    forecast_values = None
+    method = ""
+    confidence = ""
+
+    # ---------------------------------------------------------
+    # Short-history fallback
     # ---------------------------------------------------------
     #
-    # With only a few observations, a sophisticated statistical
-    # model can become unstable. We therefore use a weighted
-    # recent average until enough history exists.
+    # With only a few observations, Holt smoothing can become
+    # unstable. Use a weighted recent average instead.
     #
     if len(quantities) < 7:
-        recent_window = quantities.tail(min(3, len(quantities)))
+        recent_window = quantities.tail(
+            min(3, len(quantities))
+        )
 
         weights = pd.Series(
-            range(1, len(recent_window) + 1),
+            range(
+                1,
+                len(recent_window) + 1,
+            ),
             index=recent_window.index,
             dtype=float,
         )
 
         predicted_daily_usage = float(
-            (recent_window * weights).sum() / weights.sum()
+            (
+                recent_window * weights
+            ).sum()
+            / weights.sum()
         )
 
         method = "weighted_moving_average"
@@ -128,23 +173,30 @@ def build_forecast(
                 optimized=True,
             )
 
+            # Fit the model ONCE and generate the complete
+            # requested forecast in a single operation.
             forecast_values = fitted_model.forecast(
                 forecast_days,
             )
 
+            forecast_values = pd.Series(
+                forecast_values,
+            ).clip(
+                lower=0,
+            )
+
             predicted_daily_usage = float(
-                max(0, forecast_values.mean())
+                forecast_values.mean()
             )
 
             method = "holt"
             confidence = "medium"
 
         except Exception:
-            # Statistical models can fail on unusual datasets.
-            # The application should still provide a safe
-            # baseline instead of failing completely.
             predicted_daily_usage = float(
-                quantities.tail(min(7, len(quantities))).mean()
+                quantities.tail(
+                    min(7, len(quantities))
+                ).mean()
             )
 
             method = "moving_average_fallback"
@@ -158,44 +210,39 @@ def build_forecast(
 
     forecast = []
 
-    for offset in range(1, forecast_days + 1):
-        forecast_date = last_date + timedelta(days=offset)
+    for offset in range(
+        1,
+        forecast_days + 1,
+    ):
+        forecast_date = (
+            last_date
+            + timedelta(days=offset)
+        )
 
-        if method == "holt":
-            # Recalculate the model forecast so each future
-            # date gets its corresponding prediction.
-            try:
-                model = ExponentialSmoothing(
-                    quantities,
-                    trend="add",
-                    damped_trend=True,
-                    initialization_method="estimated",
-                )
-
-                fitted_model = model.fit(
-                    optimized=True,
-                )
-
-                future_values = fitted_model.forecast(
-                    forecast_days,
-                )
-
-                value = float(
-                    max(0, future_values.iloc[offset - 1])
-                )
-
-            except Exception:
-                value = predicted_daily_usage
-
+        if (
+            method == "holt"
+            and forecast_values is not None
+            and len(forecast_values) >= offset
+        ):
+            value = float(
+                forecast_values.iloc[offset - 1]
+            )
         else:
             value = predicted_daily_usage
 
         forecast.append(
             {
                 "date": forecast_date.date(),
-                "predicted_quantity": round(value, 2),
+                "predicted_quantity": round(
+                    max(0, value),
+                    2,
+                ),
             }
         )
+
+    # ---------------------------------------------------------
+    # Return normalized forecast result
+    # ---------------------------------------------------------
 
     return ForecastResult(
         average_daily_usage=round(
@@ -203,7 +250,7 @@ def build_forecast(
             2,
         ),
         predicted_daily_usage=round(
-            predicted_daily_usage,
+            max(0, predicted_daily_usage),
             2,
         ),
         forecast=forecast,
