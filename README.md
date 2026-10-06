@@ -654,7 +654,7 @@ git commit -m "Describe the change"
 
 ### **Ashish Raj**
 
-B.Tech Computer Science and Engineering student at **VIT-AP**, building AI/ML and data projects and looking for internship opportunities.
+B.Tech Computer Science and Engineering student at **VIT-AP**, building SDE projects and data projects and looking for internship opportunities.
 
 🔹 Microsoft Student Chapter (MSIT), VIT-AP
 🔹 Google Developers Group on Campus
@@ -663,7 +663,7 @@ B.Tech Computer Science and Engineering student at **VIT-AP**, building AI/ML an
 <br/>
 
 <a href="https://github.com/ashishraj-hub"><img src="https://img.shields.io/badge/GitHub-ashishraj--hub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"></a>
-<a href="https://www.linkedin.com/in/YOUR-LINKEDIN-USERNAME/"><img src="https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"></a>
+<a href="https://www.linkedin.com/in/ashish-raj-ashishraj/"><img src="https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"></a>
 
 <br/><br/>
 
@@ -676,7 +676,7 @@ B.Tech Computer Science and Engineering student at **VIT-AP**, building AI/ML an
 
 ## 📄 License
 
-Add the project's chosen license before public distribution (for example, [MIT](https://choosealicense.com/licenses/mit/)), then reference the `LICENSE` file here.
+Add the project's chosen license before public distribution ( [MIT](https://choosealicense.com/licenses/mit/)), then reference the `LICENSE` file here.
 
 ---
 
