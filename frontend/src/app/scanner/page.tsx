@@ -20,7 +20,6 @@ const SCANNER_ELEMENT_ID =
   "stockpulse-barcode-reader";
 
 type StockOperation =
-  | "receive"
   | "issue"
   | "wastage"
   | "transfer"
@@ -499,19 +498,17 @@ export default function ScannerPage() {
             {canOperate && (
               <div className="mt-7 border-t border-slate-700 pt-6">
                 <p className="text-sm font-bold text-white">
-                  Stock Operations
+                  What would you like to do?
                 </p>
 
                 <p className="mt-1 text-xs text-slate-500">
-                  Choose an operation for the scanned item.
+                  Receiving stock is handled through Purchase Orders.
                 </p>
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <OperationLink
-                    href={getStockOperationUrl(
-                      "receive",
-                    )}
-                    label="Receive Stock"
+                    href="/purchase-orders"
+                    label="Create Purchase Order"
                     accent="emerald"
                   />
 

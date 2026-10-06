@@ -10,7 +10,6 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   AlertTriangle,
-  ArrowDown,
   ArrowRight,
   BarChart3,
   Boxes,
@@ -46,9 +45,6 @@ import {
 } from "../lib/suppliers";
 
 import { apiRequest } from "../lib/api";
-
-const ORGANIZATION_ID =
-  "addc299a-6ab4-4399-83ab-490ce15f3faa";
 
 interface UsageHistoryPoint {
   date: string;
@@ -241,6 +237,13 @@ function SmartReorderContent() {
       return;
     }
 
+    if (!currentUser?.organization_id) {
+      setError(
+        "Authenticated organization information is not available.",
+      );
+      return;
+    }
+
     const parsedHistoryDays = Number(historyDays);
     const parsedForecastDays = Number(forecastDays);
     const parsedSafetyStockDays = Number(safetyStockDays);
@@ -289,7 +292,7 @@ function SmartReorderContent() {
       setCreatedPurchaseOrderId("");
 
       const organizationId =
-        currentUser?.organization_id ?? ORGANIZATION_ID;
+        currentUser.organization_id;
 
       const usageHistoryPath =
         `/api/v1/organizations/${organizationId}/items/${selectedItemId}/usage-history` +
@@ -356,6 +359,13 @@ function SmartReorderContent() {
       return;
     }
 
+    if (!currentUser?.organization_id) {
+      setError(
+        "Authenticated organization information is not available.",
+      );
+      return;
+    }
+
     if (!selectedSupplierId) {
       setError("Please select a supplier.");
       return;
@@ -382,7 +392,7 @@ function SmartReorderContent() {
 
       const result =
         await createSmartReorderPurchaseOrder(
-          currentUser?.organization_id ?? ORGANIZATION_ID,
+          currentUser.organization_id,
           recommendation.item_id,
           {
             item_id: recommendation.item_id,

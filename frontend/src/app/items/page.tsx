@@ -1,7 +1,13 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { AlertCircle, Package, Plus, RefreshCw, X } from "lucide-react";
+import {
+  AlertCircle,
+  Package,
+  Plus,
+  RefreshCw,
+  X,
+} from "lucide-react";
 
 import {
   createItem,
@@ -9,43 +15,76 @@ import {
   type CreateItemRequest,
   type Item,
 } from "../lib/items";
-import { getCurrentUser, type CurrentUser } from "../lib/auth";
+import {
+  getCurrentUser,
+  type CurrentUser,
+} from "../lib/auth";
 
 export default function ItemsPage() {
-  const [user, setUser] = useState<CurrentUser | null>(null);
-  const [items, setItems] = useState<Item[]>([]);
+  const [user, setUser] =
+    useState<CurrentUser | null>(null);
 
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [items, setItems] =
+    useState<Item[]>([]);
 
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [error, setError] = useState<string | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [refreshing, setRefreshing] =
+    useState(false);
 
-  const [form, setForm] = useState<CreateItemRequest>({
-    sku: "",
-    name: "",
-    barcode: "",
-    unit: "pcs",
-    reorder_point: 0,
-    reorder_quantity: 0,
-    lead_time_days: 0,
-  });
+  const [showCreateForm, setShowCreateForm] =
+    useState(false);
+
+  const [creating, setCreating] =
+    useState(false);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const [formError, setFormError] =
+    useState<string | null>(null);
+
+  const [success, setSuccess] =
+    useState<string | null>(null);
+
+  const [form, setForm] =
+    useState<CreateItemRequest>({
+      sku: "",
+      name: "",
+      barcode: "",
+      unit: "pcs",
+      reorder_point: 0,
+      reorder_quantity: 0,
+      lead_time_days: 0,
+    });
+
+  /*
+   * Only ADMIN users can create items.
+   *
+   * STAFF and VIEWER can still view the item
+   * catalog, but they must not see or access
+   * the item creation UI.
+   */
+  const canCreateItems =
+    user?.role === "admin";
 
   async function loadItems() {
     try {
       setError(null);
 
-      const currentUser = user ?? (await getCurrentUser());
+      const currentUser =
+        user ??
+        (await getCurrentUser());
 
       if (!user) {
         setUser(currentUser);
       }
 
-      const itemList = await getItems(currentUser.organization_id);
+      const itemList =
+        await getItems(
+          currentUser.organization_id,
+        );
 
       setItems(itemList);
     } catch (err) {
@@ -61,7 +100,7 @@ export default function ItemsPage() {
   }
 
   useEffect(() => {
-    loadItems();
+    void loadItems();
   }, []);
 
   function updateForm(
@@ -88,11 +127,15 @@ export default function ItemsPage() {
       reorder_quantity: 0,
       lead_time_days: 0,
     });
+
     setFormError(null);
   }
 
-  function isDuplicateSku(sku: string): boolean {
-    const normalizedSku = sku.trim().toLowerCase();
+  function isDuplicateSku(
+    sku: string,
+  ): boolean {
+    const normalizedSku =
+      sku.trim().toLowerCase();
 
     if (!normalizedSku) {
       return false;
@@ -100,20 +143,43 @@ export default function ItemsPage() {
 
     return items.some(
       (item) =>
-        item.sku.trim().toLowerCase() === normalizedSku,
+        item.sku
+          .trim()
+          .toLowerCase() ===
+        normalizedSku,
     );
   }
 
-  async function handleCreateItem(event: FormEvent<HTMLFormElement>) {
+  async function handleCreateItem(
+    event: FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
 
     setFormError(null);
     setError(null);
 
+    /*
+     * Frontend RBAC guard.
+     *
+     * This prevents STAFF/VIEWER from creating
+     * an item even if they somehow trigger the
+     * form manually.
+     */
     if (!user) {
       setFormError(
         "Authenticated user information is not available.",
       );
+      return;
+    }
+
+    if (user.role !== "admin") {
+      setShowCreateForm(false);
+      setFormError(null);
+
+      setError(
+        "Only administrators can create items.",
+      );
+
       return;
     }
 
@@ -123,12 +189,16 @@ export default function ItemsPage() {
     }
 
     if (isDuplicateSku(form.sku)) {
-      setFormError("An item with this SKU already exists.");
+      setFormError(
+        "An item with this SKU already exists.",
+      );
       return;
     }
 
     if (!form.name?.trim()) {
-      setFormError("Item name is required.");
+      setFormError(
+        "Item name is required.",
+      );
       return;
     }
 
@@ -140,20 +210,32 @@ export default function ItemsPage() {
     try {
       setCreating(true);
 
-      const createdItem = await createItem(
-        user.organization_id,
-        {
-          sku: form.sku.trim(),
-          name: form.name.trim(),
-          barcode: form.barcode?.trim() || null,
-          unit: form.unit.trim(),
-          reorder_point: Number(form.reorder_point ?? 0),
-          reorder_quantity: Number(form.reorder_quantity ?? 0),
-          lead_time_days: Number(form.lead_time_days ?? 0),
-        },
-      );
+      const createdItem =
+        await createItem(
+          user.organization_id,
+          {
+            sku: form.sku.trim(),
+            name: form.name.trim(),
+            barcode:
+              form.barcode?.trim() ||
+              null,
+            unit: form.unit.trim(),
+            reorder_point: Number(
+              form.reorder_point ?? 0,
+            ),
+            reorder_quantity: Number(
+              form.reorder_quantity ?? 0,
+            ),
+            lead_time_days: Number(
+              form.lead_time_days ?? 0,
+            ),
+          },
+        );
 
-      setItems((current) => [...current, createdItem]);
+      setItems((current) => [
+        ...current,
+        createdItem,
+      ]);
 
       resetForm();
       setShowCreateForm(false);
@@ -168,10 +250,16 @@ export default function ItemsPage() {
           : "Failed to create item.";
 
       if (
-        message.toLowerCase().includes("sku") &&
-        message.toLowerCase().includes("already exists")
+        message
+          .toLowerCase()
+          .includes("sku") &&
+        message
+          .toLowerCase()
+          .includes("already exists")
       ) {
-        setFormError("An item with this SKU already exists.");
+        setFormError(
+          "An item with this SKU already exists.",
+        );
       } else {
         setFormError(message);
       }
@@ -183,16 +271,46 @@ export default function ItemsPage() {
   async function handleRefresh() {
     setRefreshing(true);
     setSuccess(null);
+
     await loadItems();
+  }
+
+  function openCreateForm() {
+    /*
+     * Extra UI guard.
+     *
+     * Only ADMIN can open the creation modal.
+     */
+    if (!canCreateItems) {
+      return;
+    }
+
+    setShowCreateForm(true);
+    setFormError(null);
+    setError(null);
+    setSuccess(null);
+  }
+
+  function closeCreateForm() {
+    if (creating) {
+      return;
+    }
+
+    setShowCreateForm(false);
+    setFormError(null);
+    setError(null);
   }
 
   const duplicateSku =
     Boolean(form.sku?.trim()) &&
-    isDuplicateSku(form.sku ?? "");
+    isDuplicateSku(
+      form.sku ?? "",
+    );
 
   return (
     <div className="min-h-full bg-slate-950">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -205,59 +323,83 @@ export default function ItemsPage() {
                 <h1 className="text-2xl font-semibold text-white">
                   Items
                 </h1>
+
                 <p className="mt-1 text-sm text-slate-400">
-                  Manage products, SKUs, barcodes, and reorder settings.
+                  Manage products, SKUs,
+                  barcodes, and reorder
+                  settings.
                 </p>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+
+            {/* Refresh is available to every role */}
             <button
               type="button"
               onClick={handleRefresh}
-              disabled={loading || refreshing}
+              disabled={
+                loading ||
+                refreshing
+              }
               className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               <RefreshCw
                 className={`h-4 w-4 ${
-                  refreshing ? "animate-spin" : ""
+                  refreshing
+                    ? "animate-spin"
+                    : ""
                 }`}
               />
+
               Refresh
             </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                setShowCreateForm(true);
-                setFormError(null);
-                setError(null);
-                setSuccess(null);
-              }}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500"
-            >
-              <Plus className="h-4 w-4" />
-              Add Item
-            </button>
+            {/* ADMIN ONLY */}
+            {canCreateItems && (
+              <button
+                type="button"
+                onClick={openCreateForm}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500"
+              >
+                <Plus className="h-4 w-4" />
+
+                Add Item
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Page-level messages */}
-        {error && !showCreateForm && (
-          <div className="mt-6 flex items-start gap-3 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{error}</span>
-
-            <button
-              type="button"
-              onClick={() => setError(null)}
-              className="ml-auto text-red-400 hover:text-red-200"
-            >
-              <X className="h-4 w-4" />
-            </button>
+        {/* Role information */}
+        {user && (
+          <div className="mt-4 text-xs text-slate-600">
+            Signed in as{" "}
+            <span className="text-slate-500">
+              {user.role}
+            </span>
           </div>
         )}
+
+        {/* Page-level messages */}
+        {error &&
+          !showCreateForm && (
+            <div className="mt-6 flex items-start gap-3 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+
+              <span>{error}</span>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setError(null)
+                }
+                className="ml-auto text-red-400 hover:text-red-200"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
 
         {success && (
           <div className="mt-6 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
@@ -267,13 +409,16 @@ export default function ItemsPage() {
 
         {/* Summary */}
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
+
           <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
             <div className="text-sm text-slate-400">
               Total Items
             </div>
 
             <div className="mt-2 text-2xl font-semibold text-white">
-              {loading ? "—" : items.length}
+              {loading
+                ? "—"
+                : items.length}
             </div>
           </div>
 
@@ -285,7 +430,10 @@ export default function ItemsPage() {
             <div className="mt-2 text-2xl font-semibold text-white">
               {loading
                 ? "—"
-                : items.filter((item) => item.barcode).length}
+                : items.filter(
+                    (item) =>
+                      item.barcode,
+                  ).length}
             </div>
           </div>
 
@@ -299,8 +447,10 @@ export default function ItemsPage() {
                 ? "—"
                 : items.filter(
                     (item) =>
-                      item.reorder_point > 0 ||
-                      item.reorder_quantity > 0,
+                      item.reorder_point >
+                        0 ||
+                      item.reorder_quantity >
+                        0,
                   ).length}
             </div>
           </div>
@@ -314,7 +464,8 @@ export default function ItemsPage() {
             </h2>
 
             <p className="mt-1 text-xs text-slate-500">
-              Products available in your organization.
+              Products available in your
+              organization.
             </p>
           </div>
 
@@ -331,17 +482,22 @@ export default function ItemsPage() {
               </h3>
 
               <p className="mt-1 text-sm text-slate-500">
-                Add your first inventory item to get started.
+                Add your first inventory
+                item to get started.
               </p>
 
-              <button
-                type="button"
-                onClick={() => setShowCreateForm(true)}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
-              >
-                <Plus className="h-4 w-4" />
-                Add Item
-              </button>
+              {/* ADMIN ONLY */}
+              {canCreateItems && (
+                <button
+                  type="button"
+                  onClick={openCreateForm}
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+                >
+                  <Plus className="h-4 w-4" />
+
+                  Add Item
+                </button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -379,46 +535,56 @@ export default function ItemsPage() {
                 </thead>
 
                 <tbody className="divide-y divide-slate-800">
-                  {items.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="transition hover:bg-slate-800/40"
-                    >
-                      <td className="whitespace-nowrap px-5 py-4">
-                        <div className="font-medium text-white">
-                          {item.name}
-                        </div>
+                  {items.map(
+                    (item) => (
+                      <tr
+                        key={item.id}
+                        className="transition hover:bg-slate-800/40"
+                      >
+                        <td className="whitespace-nowrap px-5 py-4">
+                          <div className="font-medium text-white">
+                            {item.name}
+                          </div>
 
-                        <div className="mt-1 text-xs text-slate-500">
-                          {item.id}
-                        </div>
-                      </td>
+                          <div className="mt-1 text-xs text-slate-500">
+                            {item.id}
+                          </div>
+                        </td>
 
-                      <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-300">
-                        {item.sku}
-                      </td>
+                        <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-300">
+                          {item.sku}
+                        </td>
 
-                      <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-400">
-                        {item.barcode || "—"}
-                      </td>
+                        <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-400">
+                          {item.barcode ||
+                            "—"}
+                        </td>
 
-                      <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-300">
-                        {item.unit}
-                      </td>
+                        <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-300">
+                          {item.unit}
+                        </td>
 
-                      <td className="whitespace-nowrap px-5 py-4 text-right text-sm text-slate-300">
-                        {item.reorder_point}
-                      </td>
+                        <td className="whitespace-nowrap px-5 py-4 text-right text-sm text-slate-300">
+                          {
+                            item.reorder_point
+                          }
+                        </td>
 
-                      <td className="whitespace-nowrap px-5 py-4 text-right text-sm text-slate-300">
-                        {item.reorder_quantity}
-                      </td>
+                        <td className="whitespace-nowrap px-5 py-4 text-right text-sm text-slate-300">
+                          {
+                            item.reorder_quantity
+                          }
+                        </td>
 
-                      <td className="whitespace-nowrap px-5 py-4 text-right text-sm text-slate-300">
-                        {item.lead_time_days} days
-                      </td>
-                    </tr>
-                  ))}
+                        <td className="whitespace-nowrap px-5 py-4 text-right text-sm text-slate-300">
+                          {
+                            item.lead_time_days
+                          }{" "}
+                          days
+                        </td>
+                      </tr>
+                    ),
+                  )}
                 </tbody>
               </table>
             </div>
@@ -427,266 +593,351 @@ export default function ItemsPage() {
       </div>
 
       {/* Create Item Modal */}
-      {showCreateForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 px-6 py-5">
-              <div>
-                <h2 className="text-lg font-semibold text-white">
-                  Add Item
-                </h2>
+      {showCreateForm &&
+        canCreateItems && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
 
-                <p className="mt-1 text-sm text-slate-500">
-                  Create a new product in your inventory catalog.
-                </p>
-              </div>
+              <div className="flex items-center justify-between border-b border-slate-800 px-6 py-5">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">
+                    Add Item
+                  </h2>
 
-              <button
-                type="button"
-                onClick={() => {
-                  if (!creating) {
-                    setShowCreateForm(false);
-                    setFormError(null);
-                    setError(null);
+                  <p className="mt-1 text-sm text-slate-500">
+                    Create a new product in
+                    your inventory catalog.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={
+                    closeCreateForm
                   }
-                }}
-                className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-800 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={handleCreateItem}
-              className="space-y-6 p-6"
-            >
-              {/* Form error - intentionally INSIDE the modal */}
-              {formError && (
-                <div
-                  role="alert"
-                  className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+                  className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-800 hover:text-white"
                 >
-                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-
-                  <div className="flex-1">
-                    <div className="font-semibold text-red-200">
-                      Cannot create item
-                    </div>
-
-                    <div className="mt-1">
-                      {formError}
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setFormError(null)}
-                    className="text-red-400 hover:text-red-200"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
-
-              {/* Basic information */}
-              <div>
-                <h3 className="text-sm font-semibold text-white">
-                  Basic Information
-                </h3>
-
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="text-sm font-medium text-slate-300">
-                      SKU
-                    </label>
-
-                    <input
-                      value={form.sku ?? ""}
-                      onChange={(event) =>
-                        updateForm("sku", event.target.value)
-                      }
-                      placeholder="PAPER-A4-500"
-                      required
-                      className={`mt-2 w-full rounded-lg border bg-slate-950 px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500 ${
-                        duplicateSku
-                          ? "border-red-500/70"
-                          : "border-slate-700"
-                      }`}
-                    />
-
-                    {duplicateSku && (
-                      <div className="mt-2 flex items-center gap-2 text-sm font-medium text-red-400">
-                        <AlertCircle className="h-4 w-4 shrink-0" />
-                        <span>
-                          An item with this SKU already exists.
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-slate-300">
-                      Item Name
-                    </label>
-
-                    <input
-                      value={form.name ?? ""}
-                      onChange={(event) =>
-                        updateForm("name", event.target.value)
-                      }
-                      placeholder="A4 Printer Paper"
-                      required
-                      className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-slate-300">
-                      Barcode
-                    </label>
-
-                    <input
-                      value={form.barcode ?? ""}
-                      onChange={(event) =>
-                        updateForm("barcode", event.target.value)
-                      }
-                      placeholder="8901234567890"
-                      className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
-                    />
-
-                    <p className="mt-1 text-xs text-slate-600">
-                      Optional. Used by the scanner.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-slate-300">
-                      Unit
-                    </label>
-
-                    <input
-                      value={form.unit ?? ""}
-                      onChange={(event) =>
-                        updateForm("unit", event.target.value)
-                      }
-                      placeholder="pcs"
-                      required
-                      className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
+                  <X className="h-5 w-5" />
+                </button>
               </div>
 
-              {/* Reorder settings */}
-              <div className="border-t border-slate-800 pt-6">
-                <h3 className="text-sm font-semibold text-white">
-                  Reorder Settings
-                </h3>
+              <form
+                onSubmit={
+                  handleCreateItem
+                }
+                className="space-y-6 p-6"
+              >
 
-                <p className="mt-1 text-xs text-slate-500">
-                  These values power low-stock alerts and reorder
-                  suggestions.
-                </p>
+                {/* Form error */}
+                {formError && (
+                  <div
+                    role="alert"
+                    className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+                  >
+                    <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
 
-                <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                  <div>
-                    <label className="text-sm font-medium text-slate-300">
-                      Reorder Point
-                    </label>
+                    <div className="flex-1">
+                      <div className="font-semibold text-red-200">
+                        Cannot create item
+                      </div>
 
-                    <input
-                      type="number"
-                      min="0"
-                      value={form.reorder_point ?? 0}
-                      onChange={(event) =>
-                        updateForm(
-                          "reorder_point",
-                          Number(event.target.value),
+                      <div className="mt-1">
+                        {formError}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormError(
+                          null,
                         )
                       }
-                      className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500"
-                    />
+                      className="text-red-400 hover:text-red-200"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
                   </div>
+                )}
 
-                  <div>
-                    <label className="text-sm font-medium text-slate-300">
-                      Reorder Quantity
-                    </label>
+                {/* Basic information */}
+                <div>
+                  <h3 className="text-sm font-semibold text-white">
+                    Basic Information
+                  </h3>
 
-                    <input
-                      type="number"
-                      min="0"
-                      value={form.reorder_quantity ?? 0}
-                      onChange={(event) =>
-                        updateForm(
-                          "reorder_quantity",
-                          Number(event.target.value),
-                        )
-                      }
-                      className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500"
-                    />
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+
+                    <div>
+                      <label className="text-sm font-medium text-slate-300">
+                        SKU
+                      </label>
+
+                      <input
+                        value={
+                          form.sku ??
+                          ""
+                        }
+                        onChange={(
+                          event,
+                        ) =>
+                          updateForm(
+                            "sku",
+                            event
+                              .target
+                              .value,
+                          )
+                        }
+                        placeholder="PAPER-A4-500"
+                        required
+                        className={`mt-2 w-full rounded-lg border bg-slate-950 px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500 ${
+                          duplicateSku
+                            ? "border-red-500/70"
+                            : "border-slate-700"
+                        }`}
+                      />
+
+                      {duplicateSku && (
+                        <div className="mt-2 flex items-center gap-2 text-sm font-medium text-red-400">
+                          <AlertCircle className="h-4 w-4 shrink-0" />
+
+                          <span>
+                            An item with
+                            this SKU
+                            already
+                            exists.
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-slate-300">
+                        Item Name
+                      </label>
+
+                      <input
+                        value={
+                          form.name ??
+                          ""
+                        }
+                        onChange={(
+                          event,
+                        ) =>
+                          updateForm(
+                            "name",
+                            event
+                              .target
+                              .value,
+                          )
+                        }
+                        placeholder="A4 Printer Paper"
+                        required
+                        className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-slate-300">
+                        Barcode
+                      </label>
+
+                      <input
+                        value={
+                          form.barcode ??
+                          ""
+                        }
+                        onChange={(
+                          event,
+                        ) =>
+                          updateForm(
+                            "barcode",
+                            event
+                              .target
+                              .value,
+                          )
+                        }
+                        placeholder="8901234567890"
+                        className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
+                      />
+
+                      <p className="mt-1 text-xs text-slate-600">
+                        Optional. Used by
+                        the scanner.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-slate-300">
+                        Unit
+                      </label>
+
+                      <input
+                        value={
+                          form.unit ??
+                          ""
+                        }
+                        onChange={(
+                          event,
+                        ) =>
+                          updateForm(
+                            "unit",
+                            event
+                              .target
+                              .value,
+                          )
+                        }
+                        placeholder="pcs"
+                        required
+                        className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
+                      />
+                    </div>
                   </div>
+                </div>
 
-                  <div>
-                    <label className="text-sm font-medium text-slate-300">
-                      Lead Time
-                    </label>
+                {/* Reorder settings */}
+                <div className="border-t border-slate-800 pt-6">
+                  <h3 className="text-sm font-semibold text-white">
+                    Reorder Settings
+                  </h3>
 
-                    <div className="relative">
+                  <p className="mt-1 text-xs text-slate-500">
+                    These values power
+                    low-stock alerts and
+                    reorder suggestions.
+                  </p>
+
+                  <div className="mt-4 grid gap-4 sm:grid-cols-3">
+
+                    <div>
+                      <label className="text-sm font-medium text-slate-300">
+                        Reorder Point
+                      </label>
+
                       <input
                         type="number"
                         min="0"
-                        value={form.lead_time_days ?? 0}
-                        onChange={(event) =>
+                        value={
+                          form.reorder_point ??
+                          0
+                        }
+                        onChange={(
+                          event,
+                        ) =>
                           updateForm(
-                            "lead_time_days",
-                            Number(event.target.value),
+                            "reorder_point",
+                            Number(
+                              event
+                                .target
+                                .value,
+                            ),
                           )
                         }
-                        className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 pr-16 text-sm text-white outline-none focus:border-blue-500"
+                        className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500"
                       />
+                    </div>
 
-                      <span className="pointer-events-none absolute right-3 top-[17px] text-xs text-slate-600">
-                        days
-                      </span>
+                    <div>
+                      <label className="text-sm font-medium text-slate-300">
+                        Reorder Quantity
+                      </label>
+
+                      <input
+                        type="number"
+                        min="0"
+                        value={
+                          form.reorder_quantity ??
+                          0
+                        }
+                        onChange={(
+                          event,
+                        ) =>
+                          updateForm(
+                            "reorder_quantity",
+                            Number(
+                              event
+                                .target
+                                .value,
+                            ),
+                          )
+                        }
+                        className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-slate-300">
+                        Lead Time
+                      </label>
+
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          value={
+                            form.lead_time_days ??
+                            0
+                          }
+                          onChange={(
+                            event,
+                          ) =>
+                            updateForm(
+                              "lead_time_days",
+                              Number(
+                                event
+                                  .target
+                                  .value,
+                              ),
+                            )
+                          }
+                          className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 pr-16 text-sm text-white outline-none focus:border-blue-500"
+                        />
+
+                        <span className="pointer-events-none absolute right-3 top-[17px] text-xs text-slate-600">
+                          days
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-3 border-t border-slate-800 pt-6">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!creating) {
-                      setShowCreateForm(false);
-                      setFormError(null);
-                      setError(null);
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-3 border-t border-slate-800 pt-6">
+
+                  <button
+                    type="button"
+                    onClick={
+                      closeCreateForm
                     }
-                  }}
-                  disabled={creating}
-                  className="rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white disabled:opacity-50"
-                >
-                  Cancel
-                </button>
+                    disabled={
+                      creating
+                    }
+                    className="rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
 
-                <button
-                  type="submit"
-                  disabled={creating || duplicateSku}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {creating && (
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                  )}
+                  <button
+                    type="submit"
+                    disabled={
+                      creating ||
+                      duplicateSku
+                    }
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {creating && (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    )}
 
-                  {creating ? "Creating..." : "Create Item"}
-                </button>
-              </div>
-            </form>
+                    {creating
+                      ? "Creating..."
+                      : "Create Item"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }

@@ -34,8 +34,6 @@ import {
 import { getLocations, type Location } from "../lib/locations";
 import { getSuppliers, type Supplier } from "../lib/suppliers";
 
-const ORGANIZATION_ID = "addc299a-6ab4-4399-83ab-490ce15f3faa";
-
 type ItemLine = {
   item_id: string;
   quantity: string;
@@ -175,6 +173,12 @@ export default function PurchaseOrdersPage() {
   const [actionError, setActionError] = useState("");
 
   /*
+   * The organization is always taken from the authenticated user.
+   * Never hardcode a tenant/organization ID in this page.
+   */
+  const organizationId = currentUser?.organization_id ?? "";
+
+  /*
    * Receiving state
    */
   const [showReceiveModal, setShowReceiveModal] = useState(false);
@@ -198,16 +202,21 @@ export default function PurchaseOrdersPage() {
 
         setCurrentUser(user);
 
+        /*
+         * Important:
+         * currentUser state updates asynchronously, so the initial
+         * requests must use user.organization_id directly.
+         */
         const [
           orderData,
           supplierData,
           itemData,
           locationData,
         ] = await Promise.all([
-          getPurchaseOrders(ORGANIZATION_ID),
-          getSuppliers(ORGANIZATION_ID),
-          getItems(ORGANIZATION_ID),
-          getLocations(ORGANIZATION_ID),
+          getPurchaseOrders(user.organization_id),
+          getSuppliers(user.organization_id),
+          getItems(user.organization_id),
+          getLocations(user.organization_id),
         ]);
 
         setOrders(orderData);
@@ -229,11 +238,16 @@ export default function PurchaseOrdersPage() {
   }, []);
 
   async function refreshOrders() {
+    if (!organizationId) {
+      setError("Organization information is unavailable.");
+      return;
+    }
+
     try {
       setRefreshing(true);
       setError("");
 
-      const data = await getPurchaseOrders(ORGANIZATION_ID);
+      const data = await getPurchaseOrders(organizationId);
 
       setOrders(data);
     } catch (err) {
@@ -329,6 +343,10 @@ export default function PurchaseOrdersPage() {
   }
 
   function openCreateModal() {
+    if (!canCreate) {
+      return;
+    }
+
     setActionError("");
     resetCreateForm();
     setShowCreateModal(true);
@@ -394,6 +412,18 @@ export default function PurchaseOrdersPage() {
 
     setActionError("");
 
+    if (!organizationId) {
+      setActionError("Organization information is unavailable.");
+      return;
+    }
+
+    if (!canCreate) {
+      setActionError(
+        "You do not have permission to create purchase orders.",
+      );
+      return;
+    }
+
     if (!selectedSupplierId) {
       setActionError("Please select a supplier.");
       return;
@@ -457,7 +487,7 @@ export default function PurchaseOrdersPage() {
       setCreating(true);
 
       const created = await createPurchaseOrder(
-        ORGANIZATION_ID,
+        organizationId,
         payload,
       );
 
@@ -482,6 +512,11 @@ export default function PurchaseOrdersPage() {
     action: "submit" | "approve" | "order" | "cancel",
   ) {
     setActionError("");
+
+    if (!organizationId) {
+      setActionError("Organization information is unavailable.");
+      return;
+    }
 
     let confirmation = "";
 
@@ -517,28 +552,28 @@ export default function PurchaseOrdersPage() {
       switch (action) {
         case "submit":
           updated = await submitPurchaseOrder(
-            ORGANIZATION_ID,
+            organizationId,
             order.id,
           );
           break;
 
         case "approve":
           updated = await approvePurchaseOrder(
-            ORGANIZATION_ID,
+            organizationId,
             order.id,
           );
           break;
 
         case "order":
           updated = await orderPurchaseOrder(
-            ORGANIZATION_ID,
+            organizationId,
             order.id,
           );
           break;
 
         case "cancel":
           updated = await cancelPurchaseOrder(
-            ORGANIZATION_ID,
+            organizationId,
             order.id,
           );
           break;
@@ -578,6 +613,10 @@ export default function PurchaseOrdersPage() {
 
   function openReceiveModal(order: PurchaseOrder) {
     if (!canReceive) {
+      return;
+    }
+
+    if (!order || !organizationId) {
       return;
     }
 
@@ -640,6 +679,18 @@ export default function PurchaseOrdersPage() {
     event.preventDefault();
 
     setReceiveError("");
+
+    if (!organizationId) {
+      setReceiveError("Organization information is unavailable.");
+      return;
+    }
+
+    if (!canReceive) {
+      setReceiveError(
+        "You do not have permission to receive purchase orders.",
+      );
+      return;
+    }
 
     if (!selectedReceiveOrder) {
       setReceiveError("No purchase order selected.");
@@ -706,7 +757,7 @@ export default function PurchaseOrdersPage() {
       setReceiving(true);
 
       const updated = await receivePurchaseOrder(
-        ORGANIZATION_ID,
+        organizationId,
         selectedReceiveOrder.id,
         {
           items: payloadItems,
@@ -930,7 +981,7 @@ export default function PurchaseOrdersPage() {
             <button
               type="button"
               onClick={() => void refreshOrders()}
-              disabled={refreshing}
+              disabled={refreshing || !organizationId}
               className="inline-flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800 disabled:opacity-50"
             >
               <RefreshCw
@@ -1404,7 +1455,7 @@ export default function PurchaseOrdersPage() {
 
                   <button
                     type="submit"
-                    disabled={creating}
+                    disabled={creating || !organizationId}
                     className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus size={16} />
@@ -1673,7 +1724,8 @@ export default function PurchaseOrdersPage() {
                     disabled={
                       receiving ||
                       locations.length === 0 ||
-                      receiveLines.length === 0
+                      receiveLines.length === 0 ||
+                      !organizationId
                     }
                     className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
                   >
