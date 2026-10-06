@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:18
+    container_name: stockpulse-db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: stockpulse
+      POSTGRES_USER: stockpulse
+      POSTGRES_PASSWORD: stockpulse_dev_password
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+volumes:
+  postgres_data:
