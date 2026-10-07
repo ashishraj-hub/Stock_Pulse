@@ -676,7 +676,7 @@ B.Tech Computer Science and Engineering student at **VIT-AP**, building SDE proj
 
 ## 📄 License
 
-Add the project's chosen license before public distribution ( [MIT](https://choosealicense.com/licenses/mit/)), then reference the `LICENSE` file here.
+Add the project's chosen license before public distribution ( [MIT]((https://github.com/ashishraj-hub/Stock_Pulse/blob/main/LICENSE))), then reference the `LICENSE` file here.
 
 ---
 
