@@ -367,6 +367,13 @@ def receive_stock(
         require_roles(UserRole.ADMIN, UserRole.STAFF)
     ),
 ):
+
+    if current_user.organization_id != organization_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this organization",
+        )
+    
     # 1. Verify item belongs to organization.
     item = db.get(Item, item_id)
 

@@ -1,9 +1,14 @@
 from datetime import datetime
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
+
 
 class OrganizationCreate(BaseModel):
-    name: str
+    name: str = Field(
+        min_length=1,
+        max_length=255,
+    )
 
 
 class OrganizationResponse(BaseModel):

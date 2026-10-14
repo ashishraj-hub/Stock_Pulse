@@ -1,6 +1,5 @@
-from uuid import UUID
-
 from datetime import date, datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -9,28 +8,28 @@ from app.models.stock_movement import MovementType
 
 class ReceiveStockRequest(BaseModel):
     quantity: int = Field(gt=0)
-    reason: str | None = None
+    reason: str | None = Field(default=None, max_length=500)
 
 
 class IssueStockRequest(BaseModel):
     quantity: int = Field(gt=0)
-    reason: str | None = None
+    reason: str | None = Field(default=None, max_length=500)
 
 
 class WastageStockRequest(BaseModel):
     quantity: int = Field(gt=0)
-    reason: str
+    reason: str = Field(min_length=1, max_length=500)
 
 
 class TransferStockRequest(BaseModel):
     quantity: int = Field(gt=0)
     destination_location_id: UUID
-    reason: str | None = None
+    reason: str | None = Field(default=None, max_length=500)
 
 
 class FefoIssueRequest(BaseModel):
     quantity: int = Field(gt=0)
-    reason: str | None = None
+    reason: str | None = Field(default=None, max_length=500)
 
 
 class StockMovementResponse(BaseModel):

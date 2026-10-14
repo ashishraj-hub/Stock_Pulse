@@ -20,8 +20,14 @@ class PurchaseOrderItemCreate(BaseModel):
 class PurchaseOrderCreate(BaseModel):
     supplier_id: UUID
     expected_date: datetime | None = None
-    notes: str | None = None
-    items: list[PurchaseOrderItemCreate] = Field(min_length=1)
+    notes: str | None = Field(
+        default=None,
+        max_length=1000,
+    )
+    items: list[PurchaseOrderItemCreate] = Field(
+        min_length=1,
+        max_length=100,
+    )
 
 
 class PurchaseOrderItemResponse(BaseModel):

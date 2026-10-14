@@ -18,6 +18,17 @@ router = APIRouter(
 )
 
 
+def verify_organization_access(
+    organization_id: UUID,
+    current_user: User,
+) -> None:
+    if current_user.organization_id != organization_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this organization",
+        )
+
+
 @router.post(
     "",
     response_model=ItemResponse,
@@ -27,7 +38,13 @@ def create_item(
     organization_id: UUID,
     item_data: ItemCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    verify_organization_access(
+        organization_id,
+        current_user,
+    )
+
     organization = db.get(
         Organization,
         organization_id,
@@ -77,7 +94,13 @@ def create_item(
 def list_items(
     organization_id: UUID,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    verify_organization_access(
+        organization_id,
+        current_user,
+    )
+
     organization = db.get(
         Organization,
         organization_id,
@@ -110,16 +133,10 @@ def get_item_by_barcode(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Find an item by barcode within the authenticated
-    user's organization.
-    """
-
-    if current_user.organization_id != organization_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have access to this organization",
-        )
+    verify_organization_access(
+        organization_id,
+        current_user,
+    )
 
     item = db.scalar(
         select(Item).where(
@@ -145,7 +162,13 @@ def get_item(
     organization_id: UUID,
     item_id: UUID,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    verify_organization_access(
+        organization_id,
+        current_user,
+    )
+
     item = db.get(
         Item,
         item_id,

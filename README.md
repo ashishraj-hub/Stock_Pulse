@@ -1,192 +1,261 @@
-# StockPulse
+<!-- markdownlint-disable MD033 MD041 -->
 
-```{=html}
-<p align="center">
-```
-`<img src="docs/assets/stockpulse-banner.gif" alt="StockPulse animated banner" width="100%">`{=html}
-```{=html}
-</p>
-```
-```{=html}
-<p align="center">
-```
-`<strong>`{=html}Inventory intelligence for real-time stock visibility,
-expiry control, forecasting, and smart replenishment.`</strong>`{=html}
-```{=html}
-</p>
-```
-```{=html}
-<p align="center">
-```
-`<a href="https://github.com/ashishraj-hub/Stock_Pulse/actions">`{=html}`<img src="https://img.shields.io/github/actions/workflow/status/ashishraj-hub/Stock_Pulse/ci.yml?branch=main&style=for-the-badge&label=CI" alt="CI">`{=html}`</a>`{=html}
-`<img src="https://img.shields.io/badge/Next.js-React-111827?style=for-the-badge&logo=next.js" alt="Next.js">`{=html}
-`<img src="https://img.shields.io/badge/FastAPI-Python-0f172a?style=for-the-badge&logo=fastapi" alt="FastAPI">`{=html}
-`<img src="https://img.shields.io/badge/PostgreSQL-18-0f172a?style=for-the-badge&logo=postgresql" alt="PostgreSQL">`{=html}
-`<img src="https://img.shields.io/badge/Docker-Ready-0f172a?style=for-the-badge&logo=docker" alt="Docker">`{=html}
-```{=html}
-</p>
-```
-## Overview
+<div align="center">
 
-**StockPulse** is a multi-tenant inventory management platform
-connecting stock operations, expiry control, forecasting, alerts,
-replenishment, purchasing, analytics, auditability, and offline
-synchronization.
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f172a,50:0e7490,100:06b6d4&height=230&section=header&text=StockPulse&fontSize=72&fontColor=ffffff&animation=fadeIn&fontAlignY=38&desc=Inventory%20Intelligence%20Platform&descSize=22&descAlignY=60" alt="StockPulse header" width="100%"/>
 
-The production stack uses **Next.js + React + TypeScript + Tailwind
-CSS**, **FastAPI + Python**, **PostgreSQL**, **SQLAlchemy + Alembic**,
-**pandas + statsmodels**, **Telegram/SMTP-ready notifications**,
-**IndexedDB**, **Docker Compose**, and **GitHub Actions**.
+<img src="docs/assets/stockpulse-banner.gif" alt="StockPulse animated banner" width="100%"/>
 
-## Features
+<a href="https://github.com/ashishraj-hub/Stock_Pulse">
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&duration=3000&pause=900&color=22D3EE&center=true&vCenter=true&width=820&lines=Real-time+stock+visibility;FEFO+expiry+control+%E2%80%94+First+Expiry%2C+First+Out;Forecast-driven+smart+replenishment;Multi-tenant+%7C+RBAC+%7C+Audit+trail+%7C+Offline+sync;Built+with+Next.js+%2B+FastAPI+%2B+PostgreSQL" alt="Typing animation" />
+</a>
 
-### Inventory & stock
+<br/>
 
--   Real-time inventory visibility
--   SKU, barcode, and QR support
--   Multi-location inventory
--   Batch/lot tracking
--   Available vs. reserved quantity
--   Stock issue, wastage, adjustment, transfer, and receiving workflows
--   Append-only stock movement history
+<a href="https://github.com/ashishraj-hub/Stock_Pulse/actions"><img src="https://img.shields.io/github/actions/workflow/status/ashishraj-hub/Stock_Pulse/ci.yml?branch=main&style=for-the-badge&label=CI&logo=githubactions&logoColor=white" alt="CI"></a>
+<img src="https://img.shields.io/badge/Next.js-React-111827?style=for-the-badge&logo=next.js" alt="Next.js">
+<img src="https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
+<img src="https://img.shields.io/badge/Tailwind-CSS-0ea5e9?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
+<img src="https://img.shields.io/badge/FastAPI-Python-0f172a?style=for-the-badge&logo=fastapi" alt="FastAPI">
+<img src="https://img.shields.io/badge/PostgreSQL-18-0f172a?style=for-the-badge&logo=postgresql" alt="PostgreSQL">
+<img src="https://img.shields.io/badge/Docker-Ready-0f172a?style=for-the-badge&logo=docker" alt="Docker">
 
-### FEFO
+<br/>
 
-StockPulse implements **First Expiry, First Out**. Available batches are
-ordered by expiry date and consumed earliest-expiring first. Each
-consumed batch creates its own movement and audit record.
+<img src="https://img.shields.io/github/stars/ashishraj-hub/Stock_Pulse?style=social" alt="Stars">
+<img src="https://img.shields.io/github/forks/ashishraj-hub/Stock_Pulse?style=social" alt="Forks">
+<img src="https://img.shields.io/github/last-commit/ashishraj-hub/Stock_Pulse?style=flat-square&color=06b6d4" alt="Last commit">
+<img src="https://img.shields.io/github/repo-size/ashishraj-hub/Stock_Pulse?style=flat-square&color=06b6d4" alt="Repo size">
+<img src="https://img.shields.io/badge/PRs-welcome-22c55e?style=flat-square" alt="PRs welcome">
 
-### Smart alerts
+<br/><br/>
 
--   Low-stock and out-of-stock detection
--   Expiry monitoring
--   Wastage risk visibility
--   Alert Center
--   Telegram notifications
--   Autonomous five-minute alert scheduler
--   Notification-event deduplication
+**[Overview](#-overview) • [Features](#-features) • [Architecture](#-architecture) • [Tech Stack](#-technology-stack) • [Quick Start](#-quick-start) • [API](#-api-areas) • [Deployment](#-production-deployment) • [Roadmap](#-roadmap) • [Author](#-author)**
 
-### Smart reorder & forecasting
+</div>
 
-Reorder recommendations combine available inventory, reorder points,
-lead time, safety stock, historical usage, and forecast demand.
+---
 
-Forecasting uses: - pandas - statsmodels - weighted moving average for
-limited history - Holt/Exponential Smoothing when enough observations
-exist
+## 🚀 Overview
 
-### Analytics
+**StockPulse** is a **multi-tenant inventory management platform** that connects stock operations, expiry control, forecasting, alerts, replenishment, purchasing, analytics, auditability, and offline synchronization into a single, coherent workflow.
 
-Operational dashboards cover inventory, consumption, stock movement, top
-movers, procurement, wastage, reorder signals, and cost trends.
+Most small businesses, campuses, labs, and stores track stock in spreadsheets, discover expiry too late, and reorder by gut feeling. StockPulse replaces that with a system where **every stock movement is recorded, every decision is traceable, and every reorder is data-driven.**
 
-### Cost analysis
+> **Scan → Validate → Move → Analyse → Alert → Reorder → Approve → Receive.**
 
--   Procurement spend
--   Inventory value
--   Wastage cost
--   Cost trends
--   Top wastage items
--   Inventory breakdown
+### 🎯 Why StockPulse?
 
-Inventory and wastage valuation use the latest known purchase price
-because the current schema does not store historical unit price on every
-batch/movement. These are explicitly operational estimates, not
-batch-accurate accounting values.
+| Problem | StockPulse's answer |
+| :-- | :-- |
+| Stock levels are outdated or wrong | Append-only movement ledger keeps inventory coherent in real time |
+| Perishables expire on the shelf | **FEFO** consumption + expiry monitoring + proactive alerts |
+| Reordering is guesswork | Forecast-based recommendations using lead time and safety stock |
+| No accountability | Full **audit log** and role-based access control |
+| Poor connectivity on the floor | **Offline mode** with IndexedDB queue and server-side reconciliation |
+| One deployment per customer | **Multi-tenant** isolation enforced on the backend |
 
-### Purchasing
+---
 
--   Suppliers
--   Purchase orders
--   Approval workflow
--   Ordering
--   Expected delivery dates
--   Partial receiving
--   Received quantities
--   Audit history
+## ✨ Features
 
-### RBAC & audit
+### 📦 Inventory & Stock
 
-Roles: - **Admin** - **Staff** - **Viewer**
+- Real-time inventory visibility
+- SKU, **barcode**, and **QR** support
+- Multi-location inventory
+- Batch / lot tracking
+- Available vs. reserved quantity
+- Stock **issue, wastage, adjustment, transfer, and receiving** workflows
+- Append-only stock movement history
 
-Authorization is enforced server-side with organization/tenant
-isolation. Important actions generate audit records.
+### ⏳ FEFO — First Expiry, First Out
 
-### Offline mode
+Available batches are ordered by expiry date and consumed earliest-expiring first. **Each consumed batch creates its own movement and audit record**, so traceability is preserved down to the lot.
 
-IndexedDB queues: - Issue - Wastage - Transfer - FEFO issue
-
-Queued operations synchronize when connectivity returns; server-side
-validation remains authoritative.
-
-## Architecture
-
-``` text
-Next.js / React / TypeScript / Tailwind
-              │
-              │ REST + JWT
-              ▼
-       FastAPI / Python
-              │
-       SQLAlchemy / Alembic
-              │
-              ▼
-          PostgreSQL
-              │
-       ┌──────┴────────┐
-       ▼               ▼
- Forecasting       Notifications
- pandas +           Telegram /
- statsmodels        SMTP-ready
+```mermaid
+flowchart LR
+    A[Inventory lots] --> B[Filter available stock]
+    B --> C[Read batch expiry]
+    C --> D[Sort earliest expiry]
+    D --> E[Consume required quantity]
+    E --> F[Create movement per batch]
+    F --> G[Write audit event]
 ```
 
-## Workflow
+### 🔔 Smart Alerts
 
-``` text
-Scan / Log
-    ↓
-Validate
-    ↓
-Save Stock Movement
-    ↓
-Update Inventory
-    ↓
-Analyse Usage
-    ↓
-Alert
-    ↓
-Reorder Suggestion
-    ↓
-Approve Purchase Order
-    ↓
-Receive Stock
+- Low-stock and out-of-stock detection
+- Expiry monitoring and wastage-risk visibility
+- Central **Alert Center**
+- **Telegram** notifications
+- Autonomous **five-minute alert scheduler**
+- Notification-event **deduplication** (per organization, alert, and channel)
+
+### 🧠 Smart Reorder & Forecasting
+
+Recommendations combine **available inventory, reorder points, lead time, safety stock, historical usage, and forecast demand.**
+
+- Built with **pandas** and **statsmodels**
+- **Weighted moving average** when history is limited
+- **Holt / Exponential Smoothing** once enough observations exist
+
+```mermaid
+flowchart LR
+    A[Stock movements] --> B[Historical usage]
+    B --> C[Daily usage series]
+    C --> D[Forecast model]
+    D --> E[Predicted demand]
+    E --> F[Lead-time demand]
+    F --> G[Safety stock]
+    G --> H[Reorder recommendation]
 ```
 
-Every stock movement contributes to historical usage data used by
-analytics and forecasting.
+### 📊 Analytics
 
-## Technology Stack
+Operational dashboards covering inventory, consumption, stock movement, top movers, procurement, wastage, reorder signals, and cost trends.
 
-  Layer                Technology
-  -------------------- ----------------------------
-  Frontend             Next.js, React, TypeScript
-  Styling              Tailwind CSS
-  Scanner              html5-qrcode
-  Backend              FastAPI, Python
-  Authentication       JWT + Argon2
-  ORM                  SQLAlchemy
-  Migrations           Alembic
-  Database             PostgreSQL
-  Forecasting          pandas + statsmodels
-  Notifications        Telegram, SMTP-ready
-  Offline storage      IndexedDB
-  Containers           Docker + Docker Compose
-  CI                   GitHub Actions
-  Package management   uv / npm
+### 💰 Cost Analysis
 
-## Project Structure
+- Procurement spend
+- Inventory value
+- Wastage cost
+- Cost trends
+- Top wastage items
+- Inventory breakdown
 
-``` text
+> ℹ️ **Valuation note:** inventory and wastage valuation use the **latest known purchase price**, because the current schema does not store historical unit price on every batch or movement. These figures are explicitly **operational estimates**, not batch-accurate accounting values.
+
+### 🛒 Purchasing
+
+- Suppliers and purchase orders
+- Approval workflow
+- Ordering with expected delivery dates
+- **Partial receiving** and received-quantity tracking
+- Full audit history
+
+### 🔐 RBAC & Audit
+
+| Role | Intended use |
+| :-- | :-- |
+| **Admin** | Full control of organization, users, and approvals |
+| **Staff** | Day-to-day stock operations |
+| **Viewer** | Read-only visibility |
+
+Authorization is enforced **server-side** with organization/tenant isolation. Important actions generate audit records.
+
+### 📴 Offline Mode
+
+IndexedDB queues the following operations when connectivity drops:
+
+`Issue` · `Wastage` · `Transfer` · `FEFO Issue`
+
+Queued operations synchronize when connectivity returns, and **server-side validation remains authoritative.**
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart TB
+    UI["Next.js · React · TypeScript · Tailwind"]
+    API["FastAPI · Python"]
+    ORM["SQLAlchemy · Alembic"]
+    DB[("PostgreSQL")]
+    FC["Forecasting<br/>pandas + statsmodels"]
+    NT["Notifications<br/>Telegram / SMTP-ready"]
+
+    UI -- "REST + JWT" --> API
+    API --> ORM --> DB
+    DB --> FC
+    DB --> NT
+```
+
+### 🔁 End-to-End Workflow
+
+```mermaid
+flowchart LR
+    A[Scan / Log] --> B[Validate]
+    B --> C[Save Stock Movement]
+    C --> D[Update Inventory]
+    D --> E[Analyse Usage]
+    E --> F[Alert]
+    F --> G[Reorder Suggestion]
+    G --> H[Approve Purchase Order]
+    H --> I[Receive Stock]
+```
+
+Every stock movement contributes to the historical usage data that powers analytics and forecasting.
+
+### 🔑 Authentication & Authorization
+
+```mermaid
+flowchart LR
+    A[Credentials] --> B[Argon2 verification]
+    B --> C[JWT access token]
+    C --> D[Authenticated API request]
+    D --> E[Organization check]
+    E --> F[Role check]
+    F --> G[Business operation]
+```
+
+Tenant boundaries are enforced by the backend, **not merely by frontend filtering.**
+
+### 🗄️ Database Domain Model
+
+```text
+Organization
+├── User
+├── Location
+├── Item
+│   └── Batch
+│       └── InventoryLot
+├── StockMovement
+├── Supplier
+│   └── PurchaseOrder
+│       └── PurchaseOrderItem
+├── AuditLog
+└── NotificationEvent
+```
+
+Available quantity is derived as:
+
+```text
+available = quantity_on_hand - reserved_quantity
+```
+
+---
+
+## 🧰 Technology Stack
+
+| Layer | Technology |
+| :-- | :-- |
+| Frontend | Next.js, React, TypeScript |
+| Styling | Tailwind CSS |
+| Scanner | html5-qrcode |
+| Backend | FastAPI, Python |
+| Authentication | JWT + Argon2 |
+| ORM | SQLAlchemy |
+| Migrations | Alembic |
+| Database | PostgreSQL |
+| Forecasting | pandas + statsmodels |
+| Notifications | Telegram, SMTP-ready |
+| Offline storage | IndexedDB |
+| Containers | Docker + Docker Compose |
+| CI | GitHub Actions |
+| Package management | uv / npm |
+
+<div align="center">
+
+<img src="https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,python,fastapi,postgres,docker,githubactions&perline=9" alt="Tech stack icons" />
+
+</div>
+
+---
+
+## 📁 Project Structure
+
+```text
 Stock_Pulse/
 ├── .github/workflows/ci.yml
 ├── backend/
@@ -214,43 +283,22 @@ Stock_Pulse/
 └── .gitignore
 ```
 
-## Database Domain Model
+---
 
-``` text
-Organization
-├── User
-├── Location
-├── Item
-│   └── Batch
-│       └── InventoryLot
-├── StockMovement
-├── Supplier
-│   └── PurchaseOrder
-│       └── PurchaseOrderItem
-├── AuditLog
-└── NotificationEvent
-```
-
-Available quantity is derived as:
-
-``` text
-available = quantity_on_hand - reserved_quantity
-```
-
-## Quick Start
+## ⚡ Quick Start
 
 ### Prerequisites
 
--   Git
--   Node.js 20+
--   Python 3.13+
--   uv
--   Docker Desktop
--   VS Code or another code editor
+- Git
+- Node.js 20+
+- Python 3.13+
+- [uv](https://docs.astral.sh/uv/)
+- Docker Desktop
+- VS Code or another code editor
 
-Verify:
+Verify your setup:
 
-``` powershell
+```powershell
 git --version
 node --version
 python --version
@@ -258,424 +306,388 @@ uv --version
 docker --version
 ```
 
-### Clone
+### 1️⃣ Clone
 
-``` powershell
+```powershell
 git clone https://github.com/ashishraj-hub/Stock_Pulse.git
 cd Stock_Pulse
 ```
 
-### Backend
+### 2️⃣ Backend
 
-``` powershell
+```powershell
 cd backend
 uv sync
 ```
 
 Create `backend/.env`:
 
-``` env
+```env
 DATABASE_URL=postgresql+psycopg://stockpulse:stockpulse_dev_password@localhost:5432/stockpulse
 JWT_SECRET_KEY=change-this-development-secret
 ```
 
-### PostgreSQL
+### 3️⃣ PostgreSQL
 
 From the project root:
 
-``` powershell
+```powershell
 docker compose up -d db
 docker compose ps
 ```
 
-### Migrations
+### 4️⃣ Migrations
 
 From `backend/`:
 
-``` powershell
+```powershell
 uv run python -m alembic upgrade head
 ```
 
-Generate a migration after model changes:
+After changing models, generate a new migration:
 
-``` powershell
+```powershell
 uv run python -m alembic revision --autogenerate -m "describe change"
 ```
 
-### Start backend
+### 5️⃣ Start the backend
 
-``` powershell
+```powershell
 uv run python -m fastapi dev app/main.py
 ```
 
-API: `http://127.0.0.1:8000`\
-Docs: `http://127.0.0.1:8000/docs`
+| Service | URL |
+| :-- | :-- |
+| API | `http://127.0.0.1:8000` |
+| Interactive docs | `http://127.0.0.1:8000/docs` |
 
-### Frontend
+### 6️⃣ Frontend
 
 From `frontend/`:
 
-``` powershell
+```powershell
 npm ci
 ```
 
 Create `frontend/.env.local`:
 
-``` env
+```env
 NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 ```
 
-Start:
+Start the dev server:
 
-``` powershell
+```powershell
 npm run dev
 ```
 
-Frontend: `http://localhost:3000`
+Frontend: **`http://localhost:3000`**
 
-## Environment Variables
+---
 
-### Backend
+## ⚙️ Environment Variables
 
-  Variable                        Purpose
-  ------------------------------- ---------------------------
-  `DATABASE_URL`                  PostgreSQL connection
-  `JWT_SECRET_KEY`                JWT signing secret
-  `JWT_ALGORITHM`                 JWT algorithm
-  `ACCESS_TOKEN_EXPIRE_MINUTES`   Token lifetime
-  `CORS_ORIGINS`                  Allowed frontend origins
-  `SMTP_ENABLED`                  Email notification switch
-  `SMTP_HOST`                     SMTP server
-  `SMTP_PORT`                     SMTP port
-  `SMTP_USERNAME`                 SMTP username
-  `SMTP_PASSWORD`                 SMTP password
-  `SMTP_FROM_EMAIL`               Sender address
-  `SMTP_USE_TLS`                  SMTP TLS
-  `TELEGRAM_ENABLED`              Telegram switch
-  `TELEGRAM_BOT_TOKEN`            Telegram bot token
-  `TELEGRAM_CHAT_ID`              Telegram destination
+<details>
+<summary><b>Backend configuration (click to expand)</b></summary>
 
-Never commit production secrets.
+<br/>
 
-## Authentication & Authorization
+| Variable | Purpose |
+| :-- | :-- |
+| `DATABASE_URL` | PostgreSQL connection |
+| `JWT_SECRET_KEY` | JWT signing secret |
+| `JWT_ALGORITHM` | JWT algorithm |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Token lifetime |
+| `CORS_ORIGINS` | Allowed frontend origins |
+| `SMTP_ENABLED` | Email notification switch |
+| `SMTP_HOST` | SMTP server |
+| `SMTP_PORT` | SMTP port |
+| `SMTP_USERNAME` | SMTP username |
+| `SMTP_PASSWORD` | SMTP password |
+| `SMTP_FROM_EMAIL` | Sender address |
+| `SMTP_USE_TLS` | SMTP TLS |
+| `TELEGRAM_ENABLED` | Telegram switch |
+| `TELEGRAM_BOT_TOKEN` | Telegram bot token |
+| `TELEGRAM_CHAT_ID` | Telegram destination |
 
-``` text
-Credentials
-    ↓
-Argon2 verification
-    ↓
-JWT access token
-    ↓
-Authenticated API request
-    ↓
-Organization check
-    ↓
-Role check
-    ↓
-Business operation
-```
+</details>
 
-Tenant boundaries are enforced by the backend, not merely by frontend
-filtering.
+> ⚠️ **Never commit production secrets.**
 
-## FEFO Flow
+---
 
-``` text
-Inventory lots
-    ↓
-Filter available stock
-    ↓
-Read batch expiry
-    ↓
-Sort earliest expiry
-    ↓
-Consume required quantity
-    ↓
-Create movement per batch
-    ↓
-Write audit event
-```
+## 🔔 Notifications
 
-## Forecasting Flow
-
-``` text
-Stock movements
-    ↓
-Historical usage
-    ↓
-Daily usage series
-    ↓
-Forecast model
-    ↓
-Predicted demand
-    ↓
-Lead-time demand
-    ↓
-Safety stock
-    ↓
-Reorder recommendation
-```
-
-## Notifications
-
-Telegram is supported through environment configuration. The production
-backend runs an autonomous alert scheduler every five minutes and
-records notification events to prevent duplicate sends for the same
-organization, alert, and channel.
+Telegram is supported through environment configuration. The production backend runs an **autonomous alert scheduler every five minutes** and records notification events to prevent duplicate sends for the same organization, alert, and channel.
 
 SMTP support is implemented and can be enabled through configuration.
 
-## Production Deployment
+---
+
+## 🐳 Production Deployment
 
 Production files:
 
-``` text
+```text
 compose.prod.yaml
 backend/Dockerfile
 frontend/Dockerfile
 ```
 
-Build:
+**Build**
 
-``` powershell
+```powershell
 docker compose --env-file .env.production -f compose.prod.yaml build
 ```
 
-Start:
+**Start**
 
-``` powershell
+```powershell
 docker compose --env-file .env.production -f compose.prod.yaml up -d
 ```
 
-Check:
+**Check**
 
-``` powershell
+```powershell
 docker compose --env-file .env.production -f compose.prod.yaml ps
 ```
 
-The backend container applies Alembic migrations before starting
-Uvicorn.
+The backend container applies Alembic migrations before starting Uvicorn.
 
-## CI / GitHub Actions
+---
 
-The CI workflow validates:
+## 🔄 CI / GitHub Actions
 
-### Backend
-
--   Python setup
--   uv dependency synchronization
--   Python compilation
-
-### Frontend
-
--   Node.js setup
--   npm installation
--   ESLint
--   Production build
-
-Workflow:
-
-``` text
-Push / Pull Request
-        ↓
-GitHub Actions
-   ┌────┴────┐
-   ▼         ▼
-Backend    Frontend
-   │         │
-compile     lint
-   │         │
-   └────┬────┘
-        ▼
-      Build
+```mermaid
+flowchart TB
+    A[Push / Pull Request] --> B[GitHub Actions]
+    B --> C[Backend job]
+    B --> D[Frontend job]
+    C --> C1[Python setup] --> C2[uv sync] --> C3[Python compilation]
+    D --> D1[Node.js setup] --> D2[npm install] --> D3[ESLint] --> D4[Production build]
+    C3 --> E[Build validated]
+    D4 --> E
 ```
 
-## Security
+---
 
--   JWT authentication
--   Argon2 password hashing
--   Organization-level tenant isolation
--   Server-side RBAC
--   CORS controls
--   Environment-based secrets
--   Append-only stock movement history
--   Audit logging
--   Notification deduplication
--   Dockerized production services
+## 🛡️ Security
+
+- JWT authentication
+- Argon2 password hashing
+- Organization-level tenant isolation
+- Server-side RBAC
+- CORS controls
+- Environment-based secrets
+- Append-only stock movement history
+- Audit logging
+- Notification deduplication
+- Dockerized production services
 
 Never commit:
 
-``` text
+```text
 .env
 .env.production
 frontend/.env.local
 ```
 
-## Data Integrity Principles
+---
 
-1.  Historical stock movements are not silently rewritten.
-2.  Movement quantities are positive; movement type determines
-    direction.
-3.  Available stock equals on-hand minus reserved quantity.
-4.  Expiry belongs to the batch/lot.
-5.  Backend authorization is the security boundary.
-6.  Corrections are represented by new adjustment movements.
+## 🧱 Data Integrity Principles
 
-## API Areas
+1. Historical stock movements are **never silently rewritten**.
+2. Movement quantities are positive; **movement type determines direction**.
+3. Available stock equals on-hand minus reserved quantity.
+4. Expiry belongs to the **batch / lot**.
+5. **Backend authorization is the security boundary.**
+6. Corrections are represented by **new adjustment movements**.
 
-``` text
-/auth
-/organizations
-/locations
-/items
-/batches
-/inventory-lots
-/stock-movements
-/users
-/reorder
-/dashboard
-/suppliers
-/purchase-orders
-/analytics
-/alerts
-/cost-analysis
+---
+
+## 🔌 API Areas
+
+```text
+/auth             /organizations     /locations
+/items            /batches           /inventory-lots
+/stock-movements  /users             /reorder
+/dashboard        /suppliers         /purchase-orders
+/analytics        /alerts            /cost-analysis
 ```
 
-When the backend is running, FastAPI provides the interactive API
-documentation at `/docs`.
+With the backend running, explore everything interactively at **`/docs`** (Swagger UI).
 
-## Application Areas
+## 🖥️ Application Areas
 
-``` text
-Dashboard
-Inventory
-Stock Movements
-Stock Operations
-Scanner
-Suppliers
-Purchase Orders
-Reorder Center
-Smart Reorder
-Analytics
-Expiry Management
-Alert Center
-Wastage Management
-Users
-Audit Logs
-```
+| | | |
+| :-- | :-- | :-- |
+| Dashboard | Inventory | Stock Movements |
+| Stock Operations | Scanner | Suppliers |
+| Purchase Orders | Reorder Center | Smart Reorder |
+| Analytics | Expiry Management | Alert Center |
+| Wastage Management | Users | Audit Logs |
 
-## Troubleshooting
+---
 
-### PostgreSQL connection failure
+## 📸 Screenshots
 
-``` powershell
+> Add screenshots or GIFs under `docs/assets/` and reference them here. Recruiters and developers love seeing the product in action.
+
+<!--
+<div align="center">
+  <img src="docs/assets/dashboard.png" width="48%" alt="Dashboard"/>
+  <img src="docs/assets/alert-center.png" width="48%" alt="Alert Center"/>
+  <img src="docs/assets/smart-reorder.png" width="48%" alt="Smart Reorder"/>
+  <img src="docs/assets/scanner.png" width="48%" alt="Scanner"/>
+</div>
+-->
+
+---
+
+## 🧯 Troubleshooting
+
+<details>
+<summary><b>PostgreSQL connection failure</b></summary>
+
+```powershell
 docker compose ps
 ```
 
-Verify `DATABASE_URL` matches the database container.
+Verify that `DATABASE_URL` matches the database container.
 
-### Migration failure
+</details>
 
-``` powershell
+<details>
+<summary><b>Migration failure</b></summary>
+
+```powershell
 uv run python -m alembic current
 uv run python -m alembic history
 ```
 
-### Frontend cannot reach backend
+</details>
+
+<details>
+<summary><b>Frontend cannot reach backend</b></summary>
 
 Verify:
 
-``` env
+```env
 NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 ```
 
 Restart Next.js after changing environment variables.
 
-### Production frontend has an old API URL
+</details>
 
-`NEXT_PUBLIC_API_BASE_URL` is baked into the Next.js production build.
-Rebuild after changing it:
+<details>
+<summary><b>Production frontend has an old API URL</b></summary>
 
-``` powershell
+`NEXT_PUBLIC_API_BASE_URL` is baked into the Next.js production build, so rebuild after changing it:
+
+```powershell
 docker compose --env-file .env.production -f compose.prod.yaml build frontend
-```
-
-Then:
-
-``` powershell
 docker compose --env-file .env.production -f compose.prod.yaml up -d frontend
 ```
 
-## Contributing
+</details>
 
-1.  Create a focused feature branch.
-2.  Implement the change.
-3.  Add/update tests where appropriate.
-4.  Run backend checks.
-5.  Run frontend lint/build.
-6.  Review migrations.
-7.  Open a pull request.
+---
 
-Example:
+## 🗺️ Roadmap
 
-``` powershell
+- [x] Multi-tenant inventory with batch/lot tracking
+- [x] FEFO consumption with per-batch audit
+- [x] Forecast-driven smart reorder
+- [x] Purchase order approval and partial receiving
+- [x] Telegram alerts with autonomous scheduler
+- [x] Offline queue with IndexedDB
+- [x] Dockerized production deployment and CI
+- [ ] Supplier integrations
+- [ ] Automated supplier ordering
+- [ ] Advanced ML demand forecasting
+- [ ] Photo-based stock counting
+- [ ] Voice-based stock operations
+- [ ] UPI / billing integrations
+- [ ] Additional notification channels
+- [ ] Batch-level historical accounting valuation
+- [ ] Redis-backed distributed jobs and queues
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome!
+
+1. Create a focused feature branch.
+2. Implement the change.
+3. Add or update tests where appropriate.
+4. Run backend checks.
+5. Run frontend lint and build.
+6. Review migrations.
+7. Open a pull request.
+
+```powershell
 git checkout -b feature/my-feature
 git status
 git add .
 git commit -m "Describe the change"
 ```
 
-## Project Principles
+---
 
-### Inventory should reflect reality
+## 🧭 Project Principles
 
-Physical stock, location, batch, reservation, and movement state should
-remain coherent.
+- **Inventory should reflect reality.** Physical stock, location, batch, reservation, and movement state stay coherent.
+- **Every movement should be traceable.** Inventory changes leave a historical record.
+- **Expiry should be managed proactively.** FEFO and expiry monitoring reduce avoidable wastage.
+- **Data should drive replenishment.** Usage history and forecasting inform reorder recommendations.
+- **Security belongs on the backend.** Tenant isolation and authorization never depend solely on frontend behavior.
 
-### Every movement should be traceable
+---
 
-Inventory changes leave a historical record.
+## 👨‍💻 Author
 
-### Expiry should be managed proactively
+<div align="center">
 
-FEFO and expiry monitoring reduce avoidable wastage.
+<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=20&pause=1200&color=A78BFA&center=true&vCenter=true&width=600&lines=Hi%2C+I'm+Ashish+Raj+%F0%9F%91%8B;B.Tech+CSE+%40+VIT-AP;SDE%2FProjects+%26+Data+Builder;Open+to+internship+opportunities" alt="Author typing animation" />
 
-### Data should drive replenishment
+### **Ashish Raj**
 
-Usage history and forecasting inform reorder recommendations.
+B.Tech Computer Science and Engineering student at **VIT-AP**, building SDE projects and data projects and looking for internship opportunities.
 
-### Security belongs on the backend
+🔹 Microsoft Student Chapter (MSIT), VIT-AP
+🔹 Google Developers Group on Campus
+🔹 Edunet Foundation × IBM SkillsBuild internship (Agentic AI, Cyber Security, Quantum Computing)
 
-Tenant isolation and authorization must not depend solely on frontend
-behavior.
+<br/>
 
-## Future Scope
+<a href="https://github.com/ashishraj-hub"><img src="https://img.shields.io/badge/GitHub-ashishraj--hub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"></a>
+<a href="https://www.linkedin.com/in/ashish-raj-ashishraj/"><img src="https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"></a>
 
-Potential extensions include:
+<br/><br/>
 
--   Supplier integrations
--   Automated supplier ordering
--   Advanced ML demand forecasting
--   Photo-based stock counting
--   Voice-based stock operations
--   UPI/billing integrations
--   Additional notification channels
--   Batch-level historical accounting valuation
--   Redis-backed distributed jobs and queues
+<img src="https://github-readme-stats.vercel.app/api?username=ashishraj-hub&show_icons=true&theme=tokyonight&hide_border=true&count_private=true" alt="GitHub stats" height="165"/>
+<img src="https://github-readme-streak-stats.herokuapp.com/?user=ashishraj-hub&theme=tokyonight&hide_border=true" alt="GitHub streak" height="165"/>
 
-## License
+</div>
 
-Add the project's chosen license before public distribution.
+---
 
-## Repository
+## 📄 License
 
-**GitHub:** https://github.com/ashishraj-hub/Stock_Pulse
+Add the project's chosen license before public distribution ( [MIT](https://github.com/ashishraj-hub/Stock_Pulse/blob/main/LICENSE) ), then reference the `LICENSE` file here.
 
-```{=html}
-<p align="center">
-```
-`<sub>`{=html}StockPulse --- inventory intelligence built for
-operational clarity.`</sub>`{=html}
-```{=html}
-</p>
-```
+---
+
+<div align="center">
+
+### ⭐ If StockPulse helped or inspired you, please star the repository!
+
+**[⭐ Star](https://github.com/ashishraj-hub/Stock_Pulse) · [🍴 Fork](https://github.com/ashishraj-hub/Stock_Pulse/fork) · [🐛 Report an issue](https://github.com/ashishraj-hub/Stock_Pulse/issues)**
+
+<sub>StockPulse — inventory intelligence built for operational clarity.</sub>
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:06b6d4,50:0e7490,100:0f172a&height=120&section=footer" alt="footer" width="100%"/>
+
+</div>
