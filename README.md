@@ -26,9 +26,15 @@
 <img src="https://img.shields.io/github/forks/ashishraj-hub/Stock_Pulse?style=social" alt="Forks">
 <img src="https://img.shields.io/github/last-commit/ashishraj-hub/Stock_Pulse?style=flat-square&color=06b6d4" alt="Last commit">
 <img src="https://img.shields.io/github/repo-size/ashishraj-hub/Stock_Pulse?style=flat-square&color=06b6d4" alt="Repo size">
-<img src="https://img.shields.io/badge/PRs-welcome-22c55e?style=flat-square" alt="PRs welcome">
 
-<br/><br/>
+<br/>
+
+<img src="https://img.shields.io/badge/PRs-welcome-22c55e?style=flat-square" alt="PRs welcome">
+<img src="https://img.shields.io/badge/Status-Active-22c55e?style=flat-square" alt="Status">
+<img src="https://img.shields.io/badge/Multi--Tenant-RBAC-06b6d4?style=flat-square" alt="Multi-tenant RBAC">
+<img src="https://img.shields.io/badge/Offline-Ready-0ea5e9?style=flat-square" alt="Offline ready">
+
+<br/><br/><br/>
 
 **[Overview](#-overview) • [Features](#-features) • [Architecture](#-architecture) • [Tech Stack](#-technology-stack) • [Quick Start](#-quick-start) • [API](#-api-areas) • [Deployment](#-production-deployment) • [Roadmap](#-roadmap) • [Author](#-author)**
 
